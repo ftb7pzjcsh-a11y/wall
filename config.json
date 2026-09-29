@@ -8,8 +8,10 @@
   "filter": {
     "enabled": false,
     "hashtags": [
-      "#GeneralAssembly#UnitedNations#UN#Guterres#UNGA",
-      "#UNGA81"
+      "#UNGA81",
+      "#UN",
+      "#UnitedNations",
+      "#UNGA"
     ],
     "keywords": [
       "United Nations",
