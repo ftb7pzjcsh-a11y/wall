@@ -37,7 +37,12 @@
       "#UNGA81",
       "#UN",
       "#UnitedNations",
-      "#UNGA"
+      "#UNGA",
+      "#Guterres",
+      "#SecretaryGeneral",
+      "#UNSC",
+      "#ONU",
+      "#GeneralAssembly"
     ],
     "keywords": [
       "United Nations",
@@ -45,7 +50,16 @@
       "Security Council",
       "General Assembly",
       "UN Secretary-General",
-      "Secretary-General"
+      "Secretary-General",
+      "UN",
+      "ONU",
+      "UNSC",
+      "UNGA",
+      "UNGA81",
+      "UNHCR",
+      "OHCHR",
+      "UNICEF",
+      "WHO"
     ]
   },
   "feed": {
