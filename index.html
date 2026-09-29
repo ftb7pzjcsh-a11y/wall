@@ -287,6 +287,16 @@ function extractMedia(e) {
   return null;
 }
 
+// Words attached to a post that the topic filter should also read: link titles and image descriptions
+function embedText(e) {
+  if (!e) return '';
+  const parts = [];
+  (e.images || []).forEach(i => parts.push(i.alt || ''));
+  if (e.external) parts.push(e.external.title || '', e.external.description || '');
+  if (e.media) parts.push(embedText(e.media));
+  return parts.join(' ');
+}
+
 function normalize(item, account, byHandle) {
   const p = item && item.post;
   if (!p || !p.record || !p.author || !p.uri) return null;
@@ -313,7 +323,9 @@ function normalize(item, account, byHandle) {
     country: known ? known.country : '',
     repostedBy: isRepost ? (account.name || account.handle) : null,
     media: cfg.feed.show_images ? extractMedia(p.embed) : null,
-    url: `https://bsky.app/profile/${p.author.handle}/post/${p.uri.split('/').pop()}`
+    url: `https://bsky.app/profile/${p.author.handle}/post/${p.uri.split('/').pop()}`,
+    unfiltered: !!account.all,
+    filterText: [p.record.text, embedText(p.embed)].join(' ')
   };
 }
 
@@ -374,7 +386,9 @@ function normalizeX(s, account, byHandle) {
     repostedBy: isRepost ? (account.name || account.handle) : null,
     media: cfg.feed.show_images ? extractXMedia(s) : null,
     url: s.url || `https://x.com/${handle}/status/${s.id}`,
-    translatedFrom
+    translatedFrom,
+    unfiltered: !!account.all,
+    filterText: [s.text, tr && tr.text, s.card && s.card.title, s.card && s.card.description].filter(Boolean).join(' ')
   };
 }
 
@@ -387,12 +401,28 @@ async function fetchXAccount(account, byHandle) {
   return data.results.map(s => normalizeX(s, account, byHandle)).filter(Boolean);
 }
 
+// Topic filter. Whole words only ("UN" never matches "under"), accents ignored,
+// a hashtag also matches the plain word, and short all-caps terms (UN, WHO, UNGA)
+// are case-sensitive so "UN" does not match the French "un".
+function stripAccents(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function buildMatchers(terms) {
+  return (terms || []).map(t => String(t || '').trim()).filter(Boolean).map(t => {
+    const bare = stripAccents(t.replace(/^#/, ''));
+    const acronym = /^[A-Z0-9]{2,6}$/.test(bare) && /[A-Z]/.test(bare);
+    const body = bare.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    return new RegExp(`(^|[^\\p{L}\\p{N}_])#?${body}(?![\\p{L}\\p{N}_])`, acronym ? 'u' : 'iu');
+  });
+}
+function textMatches(text, matchers) {
+  const hay = stripAccents(text);
+  return matchers.some(re => re.test(hay));
+}
+
 function matchesFilter(post) {
-  if (!cfg.filter.enabled) return true;
-  const terms = [...(cfg.filter.hashtags || []), ...(cfg.filter.keywords || [])].map(t => t.toLowerCase()).filter(Boolean);
-  if (!terms.length) return true;
-  const hay = `${post.text} ${post.media && post.media.card ? post.media.card.title : ''}`.toLowerCase();
-  return terms.some(t => hay.includes(t));
+  if (!cfg.filter.enabled || post.unfiltered) return true;
+  const matchers = buildMatchers([...(cfg.filter.hashtags || []), ...(cfg.filter.keywords || [])]);
+  if (!matchers.length) return true;
+  return textMatches(post.filterText || post.text, matchers);
 }
 
 /* ---------- AI headlines (written every 30 min by the GitHub Action into ai.json) ---------- */

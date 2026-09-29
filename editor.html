@@ -61,7 +61,19 @@
   .results p { margin: 0; padding: 12px 14px; color: var(--muted); font-size: 14px; }
 
   /* Accounts */
-  .acc-head, .acc-row { display: grid; grid-template-columns: 40px 1.3fr 1.3fr 64px 110px 36px; gap: 10px; align-items: center; }
+  .acc-head, .acc-row { display: grid; grid-template-columns: 40px 1.2fr 1.2fr 58px 78px 110px 36px; gap: 10px; align-items: center; }
+  .acc-row .all { display: flex; justify-content: center; }
+  .acc-row .all input { width: 18px; height: 18px; }
+  .acc-head .c { text-align: center; }
+  .ftest { margin-top: 16px; font-size: 14px; }
+  .ftest table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .ftest td { padding: 6px 4px; border-top: 1px solid var(--rule); vertical-align: top; }
+  .ftest td.n { text-align: right; white-space: nowrap; color: var(--muted); }
+  .ftest h3 { font-size: 14px; color: var(--muted); font-weight: 500; margin: 16px 0 4px; }
+  .ftest ul { margin: 0; padding-left: 18px; }
+  .ftest li { margin: 4px 0; }
+  .ftest li.no { color: var(--muted); }
+  .ftest mark { background: rgba(0,158,219,.25); color: inherit; border-radius: 3px; padding: 0 2px; }
   .acc-head { font-size: 13px; color: var(--muted); padding: 0 0 8px; }
   .acc-row { padding: 7px 0; border-top: 1px solid var(--rule); }
   .acc-row input { padding: 8px 10px; }
@@ -104,7 +116,7 @@
     .grid2, .grid3 { grid-template-columns: 1fr; }
     .acc-head { display: none; }
     .acc-row { grid-template-columns: 40px 1fr 36px; }
-    .acc-row > :nth-child(3), .acc-row > :nth-child(4), .acc-row > :nth-child(5) { grid-column: 2 / 3; }
+    .acc-row > :nth-child(3), .acc-row > :nth-child(4), .acc-row > :nth-child(5), .acc-row > :nth-child(6) { grid-column: 2 / 3; }
     .top { flex-direction: column; }
   }
 </style>
@@ -138,7 +150,7 @@
       <input id="search" placeholder="UNICEF, mission permanente, ministère…" autocomplete="off">
       <div class="results" id="results" hidden></div>
     </div>
-    <div class="acc-head"><span></span><span>Identifiant</span><span>Nom affiché</span><span>Pays</span><span>Vérification</span><span></span></div>
+    <div class="acc-head"><span></span><span>Identifiant</span><span>Nom affiché</span><span>Pays</span><span class="c" title="Tous ses posts s'affichent, même avec le filtre par sujet">Sans filtre</span><span>Vérification</span><span></span></div>
     <div id="accounts"></div>
     <div class="acc-tools">
       <button type="button" id="add-account">Ajouter une ligne vide</button>
@@ -158,7 +170,7 @@
     <label class="toggle"><input type="checkbox" id="x-on"> Afficher aussi les posts X</label>
     <div class="x-body" id="x-body">
       <label class="toggle"><input type="checkbox" id="x-translate"> Traduire en anglais les posts X rédigés dans une autre langue</label>
-      <div class="acc-head"><span></span><span>Compte X</span><span>Nom affiché</span><span>Pays</span><span>Vérification</span><span></span></div>
+      <div class="acc-head"><span></span><span>Compte X</span><span>Nom affiché</span><span>Pays</span><span class="c" title="Tous ses posts s'affichent, même avec le filtre par sujet">Sans filtre</span><span>Vérification</span><span></span></div>
       <div id="x-accounts"></div>
       <div class="acc-tools">
         <button type="button" id="x-add">Ajouter un compte</button>
@@ -183,13 +195,15 @@
 
   <section>
     <h2>Filtre par sujet</h2>
-    <p class="hint">Désactivé, l'écran montre tous les posts des comptes listés. Activé, seulement ceux qui contiennent au moins un hashtag ou mot-clé.</p>
+    <p class="hint">Activé, l'écran ne garde que les posts qui contiennent au moins un hashtag ou mot-clé, en mots entiers et sans tenir compte des accents. Un hashtag compte aussi sans son # (#UNGA81 trouve « UNGA81 »). Les sigles courts en majuscules comme UN ou WHO respectent la casse, pour que « UN » ne capte pas le « un » français. Les comptes cochés « Sans filtre » s'affichent toujours en entier : pratique pour les correspondants ONU.</p>
     <label class="toggle"><input type="checkbox" id="filter-on"> N'afficher que les posts sur ce sujet</label>
     <div class="filter-body" id="filter-body">
       <div class="grid2">
         <div class="field"><label for="hashtags-input">Hashtags</label><div class="chips" id="hashtags"></div></div>
         <div class="field"><label for="keywords-input">Mots-clés</label><div class="chips" id="keywords"></div></div>
       </div>
+      <button type="button" class="ghost" id="filter-test">Tester le filtre sur les posts récents</button>
+      <div class="ftest" id="filter-test-result"></div>
     </div>
   </section>
 
@@ -366,7 +380,7 @@ function renderAccounts() {
     const del = el('button', { type: 'button', className: 'icon', textContent: '✕', ariaLabel: `Supprimer ${acc.handle}` });
     del.onclick = () => { config.accounts.splice(i, 1); renderAccounts(); markDirty(); };
 
-    row.append(avatarEl(acc.handle, acc.name), handle, name, country, check, del);
+    row.append(avatarEl(acc.handle, acc.name), handle, name, country, allBox(acc), check, del);
     box.append(row);
   });
   $('acc-count').textContent = `${config.accounts.length} compte${config.accounts.length > 1 ? 's' : ''}`;
@@ -492,7 +506,7 @@ function renderXAccounts() {
     const check = el('span', { className: `check ${kind}`, textContent: label });
     const del = el('button', { type: 'button', className: 'icon', textContent: '✕', ariaLabel: `Supprimer @${acc.handle}` });
     del.onclick = () => { config.x.accounts.splice(i, 1); renderXAccounts(); markDirty(); };
-    row.append(xAvatarEl(acc.handle, acc.name), handle, name, country, check, del);
+    row.append(xAvatarEl(acc.handle, acc.name), handle, name, country, allBox(acc), check, del);
     box.append(row);
   });
   $('x-count').textContent = `${config.x.accounts.length} compte${config.x.accounts.length > 1 ? 's' : ''}`;
@@ -554,6 +568,85 @@ $('x-test').onclick = async () => {
     out.className = 'xtest err';
     out.textContent = `X ne répond pas depuis ce navigateur (${err.name === 'AbortError' ? 'délai dépassé' : err.message}). FxTwitter est peut-être en panne, ou le réseau le bloque. L'écran restera sur Bluesky.`;
   }
+};
+
+// Topic filter. Whole words only ("UN" never matches "under"), accents ignored,
+// a hashtag also matches the plain word, and short all-caps terms (UN, WHO, UNGA)
+// are case-sensitive so "UN" does not match the French "un".
+function stripAccents(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function buildMatchers(terms) {
+  return (terms || []).map(t => String(t || '').trim()).filter(Boolean).map(t => {
+    const bare = stripAccents(t.replace(/^#/, ''));
+    const acronym = /^[A-Z0-9]{2,6}$/.test(bare) && /[A-Z]/.test(bare);
+    const body = bare.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    return new RegExp(`(^|[^\\p{L}\\p{N}_])#?${body}(?![\\p{L}\\p{N}_])`, acronym ? 'u' : 'iu');
+  });
+}
+function textMatches(text, matchers) {
+  const hay = stripAccents(text);
+  return matchers.some(re => re.test(hay));
+}
+
+function allBox(acc) {
+  const wrap = el('label', { className: 'all', title: 'Tous ses posts s\'affichent, même avec le filtre par sujet' });
+  const box = el('input', { type: 'checkbox', checked: !!acc.all, ariaLabel: 'Sans filtre' });
+  box.onchange = () => { acc.all = box.checked; markDirty(); };
+  wrap.append(box);
+  return wrap;
+}
+
+// Runs the filter on what the accounts posted recently, so you can see what it keeps
+$('filter-test').onclick = async () => {
+  const out = $('filter-test-result');
+  const matchers = buildMatchers([...config.filter.hashtags, ...config.filter.keywords]);
+  if (!matchers.length) { out.textContent = 'Ajoute au moins un hashtag ou un mot-clé.'; return; }
+  out.textContent = 'Lecture des posts récents…';
+  const since = Date.now() - (config.feed.max_age_hours || 48) * 3600000;
+  const jobs = config.accounts.filter(a => validHandle(a.handle)).map(async a => {
+    const res = await fetch(`${API}/app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(a.handle)}&limit=20&filter=posts_no_replies`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const posts = (data.feed || []).filter(i => i.post && i.post.record && !(i.reason && String(i.reason.$type).endsWith('#reasonPin')))
+      .map(i => ({ time: Date.parse(i.post.record.createdAt), text: i.post.record.text || '', extra: [(i.post.embed && i.post.embed.external && i.post.embed.external.title) || '', ...((i.post.embed && i.post.embed.images) || []).map(x => x.alt || '')].join(' ') }));
+    return { label: a.name || a.handle, where: 'Bluesky', all: !!a.all, posts };
+  });
+  if (config.x.enabled) {
+    jobs.push(...config.x.accounts.filter(a => validXHandle(a.handle)).map(async a => {
+      const res = await fetch(`${FX_API}/profile/${encodeURIComponent(a.handle)}/statuses?count=20${config.x.translate ? '&lang=en' : ''}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const posts = (data.results || []).filter(t => t && t.type === 'status' && !(t.replying_to && (t.replying_to.status || t.replying_to.screen_name)))
+        .map(t => ({ time: t.created_timestamp * 1000, text: (t.translation && t.translation.text) || t.text || '', extra: [t.text, t.card && t.card.title].filter(Boolean).join(' ') }));
+      return { label: a.name || a.handle, where: 'X', all: !!a.all, posts };
+    }));
+  }
+  const results = await Promise.allSettled(jobs);
+  const table = el('table');
+  const kept = [], dropped = [];
+  results.forEach(r => {
+    if (r.status !== 'fulfilled') return;
+    const { label, where, all, posts } = r.value;
+    const recent = posts.filter(p => p.time >= since);
+    let n = 0;
+    recent.forEach(p => {
+      const ok = all || textMatches(`${p.text} ${p.extra}`, matchers);
+      if (ok) { n++; kept.push({ label, text: p.text }); } else dropped.push({ label, text: p.text });
+    });
+    const tr = el('tr');
+    tr.append(el('td', { textContent: `${label} (${where})` }), el('td', { className: 'n', textContent: all ? `${recent.length} affiché${recent.length > 1 ? 's' : ''} (sans filtre)` : `${n} sur ${recent.length} gardé${n > 1 ? 's' : ''}` }));
+    table.append(tr);
+  });
+  const failed = results.filter(r => r.status !== 'fulfilled').length;
+  out.replaceChildren(el('p', { textContent: `${kept.length} posts gardés, ${dropped.length} écartés sur la période affichée${failed ? ` (${failed} compte${failed > 1 ? 's' : ''} injoignable${failed > 1 ? 's' : ''})` : ''}.` }), table);
+  const list = (title, items, cls) => {
+    if (!items.length) return;
+    out.append(el('h3', { textContent: title }));
+    const ul = el('ul');
+    items.slice(0, 6).forEach(i => ul.append(el('li', { className: cls, textContent: `${i.label} : ${i.text.replace(/\s+/g, ' ').slice(0, 140)}${i.text.length > 140 ? '…' : ''}` })));
+    out.append(ul);
+  };
+  list('Exemples gardés', kept, '');
+  list('Exemples écartés', dropped, 'no');
 };
 
 /* ---------- Search ---------- */
@@ -707,24 +800,24 @@ function mergeConfig(data) {
   out.feed = { ...out.feed, ...(data.feed || {}) };
   out.filter.hashtags = Array.isArray(out.filter.hashtags) ? out.filter.hashtags : [];
   out.filter.keywords = Array.isArray(out.filter.keywords) ? out.filter.keywords : [];
-  out.accounts = Array.isArray(data.accounts) ? data.accounts.filter(a => a && typeof a.handle === 'string').map(a => ({ handle: a.handle, name: a.name || '', country: a.country || '' })) : [];
+  out.accounts = Array.isArray(data.accounts) ? data.accounts.filter(a => a && typeof a.handle === 'string').map(a => ({ handle: a.handle, name: a.name || '', country: a.country || '', all: !!a.all })) : [];
   out.ai = { ...out.ai, ...(data.ai || {}) };
   out.x = { ...out.x, ...(data.x || {}) };
-  out.x.accounts = Array.isArray(out.x.accounts) ? out.x.accounts.filter(a => a && typeof a.handle === 'string').map(a => ({ handle: a.handle, name: a.name || '', country: a.country || '' })) : [];
+  out.x.accounts = Array.isArray(out.x.accounts) ? out.x.accounts.filter(a => a && typeof a.handle === 'string').map(a => ({ handle: a.handle, name: a.name || '', country: a.country || '', all: !!a.all })) : [];
   return out;
 }
 
 function buildConfig() {
   const out = structuredClone(config);
   out.accounts = out.accounts
-    .map(a => ({ handle: cleanHandle(a.handle), name: (a.name || '').trim(), country: (a.country || '').toLowerCase() }))
+    .map(a => ({ handle: cleanHandle(a.handle), name: (a.name || '').trim(), country: (a.country || '').toLowerCase(), ...(a.all ? { all: true } : {}) }))
     .filter(a => a.handle);
   const bad = out.accounts.find(a => !validHandle(a.handle) || !validCountry(a.country));
   if (bad) throw new Error(`Identifiant ou code pays invalide : ${bad.handle}`);
   const seen = new Set();
   for (const a of out.accounts) { if (seen.has(a.handle)) throw new Error(`${a.handle} est présent deux fois`); seen.add(a.handle); }
   out.x.accounts = out.x.accounts
-    .map(a => ({ handle: cleanXHandle(a.handle), name: (a.name || '').trim(), country: (a.country || '').toLowerCase() }))
+    .map(a => ({ handle: cleanXHandle(a.handle), name: (a.name || '').trim(), country: (a.country || '').toLowerCase(), ...(a.all ? { all: true } : {}) }))
     .filter(a => a.handle);
   const badX = out.x.accounts.find(a => !validXHandle(a.handle) || !validCountry(a.country));
   if (badX) throw new Error(`Compte X ou code pays invalide : @${badX.handle}`);
