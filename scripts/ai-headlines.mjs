@@ -9,6 +9,23 @@ const FX = 'https://api.fxtwitter.com/2';
 const MAX_NEW_PER_RUN = 25;       // one model call per run keeps us far below the daily quota
 const KEEP_DAYS = 8;
 
+// Topic filter. Whole words only ("UN" never matches "under"), accents ignored,
+// a hashtag also matches the plain word, and short all-caps terms (UN, WHO, UNGA)
+// are case-sensitive so "UN" does not match the French "un".
+function stripAccents(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function buildMatchers(terms) {
+  return (terms || []).map(t => String(t || '').trim()).filter(Boolean).map(t => {
+    const bare = stripAccents(t.replace(/^#/, ''));
+    const acronym = /^[A-Z0-9]{2,6}$/.test(bare) && /[A-Z]/.test(bare);
+    const body = bare.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    return new RegExp(`(^|[^\\p{L}\\p{N}_])#?${body}(?![\\p{L}\\p{N}_])`, acronym ? 'u' : 'iu');
+  });
+}
+function textMatches(text, matchers) {
+  const hay = stripAccents(text);
+  return matchers.some(re => re.test(hay));
+}
+
 const readJSON = async (path, fallback) => { try { return JSON.parse(await readFile(path, 'utf8')); } catch { return fallback; } };
 const log = (...a) => console.log('[ai-headlines]', ...a);
 
@@ -29,7 +46,9 @@ async function blueskyPosts(account) {
     time: Date.parse(i.post.record.createdAt) || Date.parse(i.post.indexedAt),
     author: i.post.author.displayName || i.post.author.handle,
     text: String(i.post.record.text || '').trim(),
-    link: i.post.embed && i.post.embed.external ? i.post.embed.external.title || '' : ''
+    link: i.post.embed && i.post.embed.external ? i.post.embed.external.title || '' : '',
+    all: !!account.all,
+    filterText: [i.post.record.text, i.post.embed && i.post.embed.external && i.post.embed.external.title, ...((i.post.embed && i.post.embed.images) || []).map(x => x.alt)].filter(Boolean).join(' ')
   }));
 }
 
@@ -40,7 +59,9 @@ async function xPosts(account) {
     time: s.created_timestamp ? s.created_timestamp * 1000 : Date.parse(s.created_at),
     author: (s.author && s.author.name) || account.handle,
     text: String(s.text || '').replace(/\s*https:\/\/t\.co\/\w+\s*$/, '').trim(),
-    link: s.card && s.card.title ? s.card.title : ''
+    link: s.card && s.card.title ? s.card.title : '',
+    all: !!account.all,
+    filterText: [s.text, s.card && s.card.title].filter(Boolean).join(' ')
   }));
 }
 
@@ -89,7 +110,11 @@ async function main() {
     jobs.push(...(config.x.accounts || []).map(a => xPosts(a).catch(e => { log(`X @${a.handle}: ${e.message}`); return []; })));
   }
   const all = (await Promise.all(jobs)).flat().filter(p => p.id && Number.isFinite(p.time) && (p.text || p.link));
-  const fresh = all.filter(p => Date.now() - p.time < maxAge && !headlines[p.id]);
+  // Same topic filter as the screen: no headline for posts that will never be shown
+  const f = config.filter || {};
+  const matchers = f.enabled ? buildMatchers([...(f.hashtags || []), ...(f.keywords || [])]) : [];
+  const shown = p => !matchers.length || p.all || textMatches(p.filterText || p.text, matchers);
+  const fresh = all.filter(p => Date.now() - p.time < maxAge && !headlines[p.id] && shown(p));
   const unique = [...new Map(fresh.map(p => [p.id, p])).values()].sort((a, b) => b.time - a.time).slice(0, MAX_NEW_PER_RUN);
   log(`${all.length} posts found, ${unique.length} need a headline.`);
 
