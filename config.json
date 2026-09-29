@@ -4,7 +4,33 @@
     "subtitle": "Journalists and media covering the UN",
     "show_logo": false
   },
-  "accounts": [],
+  "accounts": [
+    {
+      "handle": "en.afp.com",
+      "name": "AFP News Agency",
+      "country": ""
+    },
+    {
+      "handle": "lemonde.fr",
+      "name": "Le Monde",
+      "country": ""
+    },
+    {
+      "handle": "english.lemonde.fr",
+      "name": "Le Monde in English",
+      "country": ""
+    },
+    {
+      "handle": "afrique.lemonde.fr",
+      "name": "Le Monde Afrique",
+      "country": ""
+    },
+    {
+      "handle": "reuters.com",
+      "name": "Reuters",
+      "country": ""
+    }
+  ],
   "filter": {
     "enabled": false,
     "hashtags": [
