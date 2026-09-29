@@ -51,6 +51,26 @@
         "handle": "AJEnglish",
         "name": "Al Jazeera English",
         "country": ""
+      },
+      {
+        "handle": "nytimes",
+        "name": "The New York Times",
+        "country": ""
+      },
+      {
+        "handle": "guardian",
+        "name": "The Guardian",
+        "country": ""
+      },
+      {
+        "handle": "FT",
+        "name": "Financial Times",
+        "country": ""
+      },
+      {
+        "handle": "TheEconomist",
+        "name": "The Economist",
+        "country": ""
       }
     ]
   },
