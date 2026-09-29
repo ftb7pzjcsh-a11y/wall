@@ -92,6 +92,31 @@
         "handle": "TV5MONDEINFO",
         "name": "TV5MONDE Info",
         "country": ""
+      },
+      {
+        "handle": "SkyNews",
+        "name": "Sky News",
+        "country": ""
+      },
+      {
+        "handle": "thetimes",
+        "name": "The Times and Sunday Times",
+        "country": ""
+      },
+      {
+        "handle": "lemondefr",
+        "name": "Le Monde",
+        "country": ""
+      },
+      {
+        "handle": "libe",
+        "name": "Libération",
+        "country": ""
+      },
+      {
+        "handle": "mdiplo",
+        "name": "Le Monde diplomatique 🖋",
+        "country": ""
       }
     ]
   },
