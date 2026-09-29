@@ -71,6 +71,21 @@
         "handle": "TheEconomist",
         "name": "The Economist",
         "country": ""
+      },
+      {
+        "handle": "BreakingF24",
+        "name": "FRANCE 24 – Breaking",
+        "country": ""
+      },
+      {
+        "handle": "France24_en",
+        "name": "FRANCE 24 English",
+        "country": ""
+      },
+      {
+        "handle": "TV5MONDEINFO",
+        "name": "TV5MONDE Info",
+        "country": ""
       }
     ]
   },
