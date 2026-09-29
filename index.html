@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Press Wall</title>
+<style>
+  :root {
+    /* Newsroom palette: paper, ink and press red */
+    --navy: #F4F1EA;
+    --navy-deep: #E9E4D8;
+    --un-blue: #C8372D;
+    --paper: #15171C;
+    --soft: #3C4048;
+    --muted: #6E6A62;
+    --rule: #D6CFC0;
+    --gold: #A86200;
+    --font: Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: "Noto Serif", Georgia, "Times New Roman", serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--navy-deep); overflow: hidden; }
+  body { font-family: var(--font); color: var(--paper); -webkit-font-smoothing: antialiased; }
+
+  #stage {
+    position: absolute; top: 0; left: 0;
+    width: 1080px; height: 1920px;
+    transform-origin: 0 0;
+    background: var(--navy);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) 500px 140px;
+  }
+
+  /* Header */
+  .head { padding: 50px 72px 30px; display: flex; justify-content: space-between; align-items: flex-end; gap: 40px; border-bottom: 2px solid var(--rule); }
+  .brand { min-width: 0; }
+  .brand h1 { font-family: var(--serif); font-size: 104px; font-weight: 700; letter-spacing: -2px; line-height: .9; white-space: nowrap; }
+  .brand .logo { display: block; height: 116px; width: auto; filter: brightness(0); }
+  .brand .logo[hidden], .brand h1[hidden] { display: none; }
+  .brand p { font-size: 30px; color: var(--muted); margin-top: 18px; line-height: 1.3; max-width: 600px; }
+  .status { text-align: right; font-size: 26px; color: var(--muted); line-height: 1.45; white-space: nowrap; }
+  .status strong { color: var(--paper); font-weight: 500; }
+  .dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--un-blue); margin-right: 12px; vertical-align: 1px; animation: pulse 2.4s ease-in-out infinite; }
+  .status[data-state="offline"] .dot { background: var(--gold); animation: none; }
+  .status[data-state="offline"] strong { color: var(--gold); }
+  .status-x { color: var(--gold); }
+  .status-x[hidden] { display: none; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  /* Featured post */
+  .feature { padding: 52px 72px 40px; display: flex; flex-direction: column; position: relative; min-height: 0; overflow: hidden; }
+  .viewport { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+  .post { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--navy); }
+  /* Card deck: the next post slides in from the right over the current one, which steps back and fades */
+  .post.slide { transition: transform .85s cubic-bezier(.65, 0, .35, 1), opacity .85s ease; will-change: transform, opacity; }
+  .repost { font-size: 26px; color: var(--muted); margin-bottom: 18px; flex-shrink: 0; }
+  .author { display: flex; align-items: center; gap: 22px; flex-shrink: 0; }
+  .avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: var(--rule); flex-shrink: 0; }
+  .avatar-fallback { display: grid; place-items: center; font-size: 34px; font-weight: 700; color: #fff; background: var(--un-blue); }
+  .who { min-width: 0; }
+  .name { font-size: 38px; font-weight: 700; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .name .flag { margin-right: 12px; }
+  .meta { font-size: 27px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .media { position: relative; margin-top: 36px; border-radius: 30px; overflow: hidden; clip-path: inset(0 round 30px); isolation: isolate; background: var(--navy-deep); flex-shrink: 0; }
+  .media img { position: relative; width: 100%; height: 100%; object-fit: contain; display: block; }
+  .media img.backdrop { position: absolute; inset: -60px; width: calc(100% + 120px); height: calc(100% + 120px); object-fit: cover; filter: blur(40px) brightness(1.02) saturate(1.1); opacity: .55; }
+  .media .tag { position: absolute; top: 18px; left: 18px; background: rgba(21,23,28,.82); color: #fff; font-size: 22px; font-weight: 500; padding: 6px 16px; border-radius: 20px; }
+  .media .card { position: absolute; left: 0; right: 0; bottom: 0; padding: 60px 26px 22px; color: #fff; background: linear-gradient(transparent, rgba(21,23,28,.9)); }
+  .media .card b { display: block; font-size: 30px; line-height: 1.25; font-weight: 500; }
+  .media .card span { font-size: 22px; color: rgba(255,255,255,.75); }
+  .text { font-family: var(--serif); font-size: 64px; font-weight: 500; line-height: 1.22; letter-spacing: -.4px; margin-top: 36px; white-space: pre-line; overflow-wrap: anywhere; flex-shrink: 0; }
+  .text .tagword { color: var(--un-blue); }
+  .textrow { display: flex; gap: 36px; align-items: flex-start; margin-top: 36px; flex-shrink: 0; }
+  .textrow .textcol { flex: 1; min-width: 0; }
+  .textrow .text { margin-top: 0; }
+  .translated { font-size: 22px; color: var(--muted); margin-top: 12px; font-style: italic; }
+  .headline { font-family: var(--serif); font-size: 62px; font-weight: 700; line-height: 1.1; letter-spacing: -.8px; }
+  .text.small { font-family: var(--font); font-weight: 400; color: var(--soft); margin-top: 18px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+  .qrbox { margin-left: auto; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .qr-label { font-size: 18px; white-space: nowrap; color: var(--muted); text-align: center; line-height: 1.3; }
+  .qr-code { width: 118px; height: 118px; background: #fff; padding: 8px; border-radius: 12px; border: 2px solid var(--rule); }
+  .qr-code svg { width: 100%; height: 100%; display: block; }
+  .progress { position: absolute; left: 72px; right: 72px; bottom: 0; height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 0; background: var(--un-blue); }
+  .empty { font-size: 46px; color: var(--muted); line-height: 1.3; margin-top: 60px; }
+
+  /* Queue */
+  .queue { background: var(--navy-deep); padding: 30px 72px 0; overflow: hidden; }
+  .queue h2 { font-size: 26px; font-weight: 500; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+  .q { display: grid; grid-template-columns: 56px 1fr 110px; gap: 22px; align-items: center; padding: 14px 0; border-top: 2px solid var(--rule); }
+  .q .avatar { width: 56px; height: 56px; }
+  .q .avatar-fallback { font-size: 24px; }
+  .q-name { font-size: 22px; line-height: 1.4; color: var(--muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q-text { font-family: var(--serif); font-size: 28px; line-height: 1.25; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+  .q-time { font-size: 26px; color: var(--muted); text-align: right; }
+
+  /* Clocks */
+  .clocks { background: var(--navy-deep); border-top: 2px solid var(--rule); padding: 0 72px; display: flex; align-items: center; justify-content: space-between; }
+  .clock { display: flex; align-items: baseline; gap: 12px; white-space: nowrap; }
+  .clock + .clock { padding-left: 40px; border-left: 2px solid var(--rule); }
+  .clock b { font-size: 54px; font-weight: 300; font-variant-numeric: tabular-nums; }
+  .clock span { font-size: 26px; color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) { .post.slide { transition: none; } .dot { animation: none; } }
+</style>
+</head>
+<body>
+<div id="stage">
+  <header class="head">
+    <div class="brand">
+      <img id="screen-logo" class="logo" src="logo.png" alt="United Nations" hidden>
+      <h1 id="screen-title">Press Wall</h1>
+      <p id="screen-subtitle">Journalists and media covering the UN</p>
+    </div>
+    <div class="status" id="status"><span class="dot"></span><strong id="status-main">Connecting…</strong><br><span id="status-sub">Live from Bluesky</span><span id="status-x" class="status-x" hidden><br>X paused</span></div>
+  </header>
+
+  <section class="feature">
+    <div class="viewport" id="viewport"><div class="post" id="post"></div></div>
+    <div class="progress"><i id="progress"></i></div>
+  </section>
+
+  <section class="queue">
+    <h2>Latest posts</h2>
+    <div id="queue"></div>
+  </section>
+
+  <footer class="clocks">
+    <div class="clock"><b data-tz="America/New_York">--:--</b><span>New York</span></div>
+    <div class="clock"><b data-tz="Europe/Zurich">--:--</b><span>Geneva</span></div>
+    <div class="clock"><b data-tz="Africa/Nairobi">--:--</b><span>Nairobi</span></div>
+  </footer>
+</div>
+
+<script src="qrcode.js"></script>
+<script>
+'use strict';
+
+/* ---------- Settings (the rest lives in config.json, edited with editor.html) ---------- */
+const API = 'https://public.api.bsky.app/xrpc';
+const FX_API = 'https://api.fxtwitter.com/2'; // unofficial X reader, optional (see editor)
+const FETCH_TIMEOUT = 10000;
+const CONFIG_URL = 'config.json';
+const POSTS_PER_ACCOUNT = 15;
+const ROTATION_SIZE = 8;     // posts that take turns in the big slot
+const QUEUE_SIZE = 3;        // rows in the list below
+const MIN_POSTS = 6;
+const MEDIA_MAX_HEIGHT = 820; // tall pictures are shown whole, centred, up to this height         // if the age limit leaves fewer, keep the newest anyway
+const TZ = 'America/New_York';
+
+const DEFAULTS = {
+  display: { title: 'Press Wall', subtitle: 'Journalists and media covering the UN', show_logo: false },
+  accounts: [],
+  filter: { enabled: false, hashtags: [], keywords: [] },
+  feed: { refresh_minutes: 5, rotate_seconds: 15, max_age_hours: 48, include_reposts: false, show_images: true },
+  x: { enabled: false, translate: true, accounts: [] },
+  ai: { headlines: false }
+};
+
+/* ---------- Stage scaling ---------- */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(innerWidth / 1080, innerHeight / 1920);
+  stage.style.transform = `scale(${s})`;
+  stage.style.left = `${(innerWidth - 1080 * s) / 2}px`;
+  stage.style.top = `${(innerHeight - 1920 * s) / 2}px`;
+}
+addEventListener('resize', fit);
+fit();
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const hm = (t, tz = TZ) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(t));
+const overflows = n => n.scrollHeight > n.clientHeight + 1;
+
+function ago(t) {
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} h ago`;
+  const d = Math.floor(h / 24);
+  return `${d} day${d > 1 ? 's' : ''} ago`;
+}
+
+function flag(code) {
+  if (!code || !/^[a-z]{2}$/i.test(code)) return '';
+  return code.toUpperCase().split('').map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('');
+}
+
+function avatarNode(post) {
+  const initials = (post.name || post.handle || '?').replace(/^the\s+/i, '').trim().charAt(0).toUpperCase();
+  const fallback = () => el('div', 'avatar avatar-fallback', initials);
+  if (!post.avatar) return fallback();
+  const img = el('img', 'avatar');
+  img.alt = '';
+  img.src = post.avatar;
+  img.onerror = () => img.replaceWith(fallback());
+  return img;
+}
+
+// Hashtags, mentions and links in UN blue, everything else as plain text
+function richText(text, cls) {
+  const p = el('p', cls);
+  const re = /(#[\p{L}\p{N}_]+|@[a-z0-9-]+(?:\.[a-z0-9-]+)+|https?:\/\/\S+)/giu;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) p.append(document.createTextNode(text.slice(last, m.index)));
+    p.append(el('span', 'tagword', m[0].replace(/^https?:\/\//, '')));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) p.append(document.createTextNode(text.slice(last)));
+  return p;
+}
+
+function qrNode(url) {
+  if (typeof qrcode !== 'function') return null;
+  try {
+    const q = qrcode(0, 'M');
+    q.addData(url);
+    q.make();
+    const wrap = el('div', 'qr-code');
+    wrap.innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+    return wrap;
+  } catch (_) { return null; }
+}
+
+/* ---------- Config ---------- */
+let cfg = structuredClone(DEFAULTS);
+let logoFailed = false;
+document.getElementById('screen-logo').onerror = () => { logoFailed = true; loadConfig(); };
+
+function mergeConfig(data) {
+  const out = structuredClone(DEFAULTS);
+  if (!data || typeof data !== 'object') return out;
+  out.display = { ...out.display, ...(data.display || {}) };
+  out.filter = { ...out.filter, ...(data.filter || {}) };
+  out.feed = { ...out.feed, ...(data.feed || {}) };
+  out.accounts = Array.isArray(data.accounts) ? data.accounts.filter(a => a && a.handle) : [];
+  out.x = { ...out.x, ...(data.x || {}) };
+  out.x.accounts = Array.isArray(out.x.accounts) ? out.x.accounts.filter(a => a && a.handle) : [];
+  out.ai = { ...out.ai, ...(data.ai || {}) };
+  return out;
+}
+
+async function loadConfig() {
+  try {
+    const res = await fetch(`${CONFIG_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) cfg = mergeConfig(await res.json());
+  } catch (_) { /* keep previous settings */ }
+  $('screen-title').textContent = cfg.display.title || 'Press Wall';
+  // Logo by default; the title text is used when the logo is switched off or cannot load
+  const useLogo = cfg.display.show_logo === true && !logoFailed;
+  $('screen-logo').hidden = !useLogo;
+  $('screen-title').hidden = useLogo;
+  $('screen-subtitle').textContent = cfg.display.subtitle || '';
+  document.title = cfg.display.title || 'Press Wall';
+  fitTitle();
+}
+
+function fitTitle() {
+  const h = $('screen-title');
+  let size = 104;
+  h.style.fontSize = size + 'px';
+  while (h.scrollWidth > h.clientWidth + 1 && size > 48) { size -= 4; h.style.fontSize = size + 'px'; }
+}
+
+/* ---------- Bluesky ---------- */
+function hostOf(uri) { try { return new URL(uri).hostname.replace(/^www\./, ''); } catch (_) { return ''; } }
+
+function extractMedia(e) {
+  if (!e) return null;
+  const t = e.$type || '';
+  const ratio = r => (r && r.width && r.height ? r.width / r.height : null);
+  if (t.startsWith('app.bsky.embed.images')) {
+    const img = e.images && e.images[0];
+    return img ? { src: img.fullsize || img.thumb, alt: img.alt || '', ratio: ratio(img.aspectRatio), more: e.images.length - 1 } : null;
+  }
+  if (t.startsWith('app.bsky.embed.video')) return e.thumbnail ? { src: e.thumbnail, ratio: ratio(e.aspectRatio), video: true } : null;
+  if (t.startsWith('app.bsky.embed.external')) {
+    const x = e.external;
+    return x && x.thumb ? { src: x.thumb, ratio: 1.91, card: { title: x.title || '', domain: hostOf(x.uri) } } : null;
+  }
+  if (t.startsWith('app.bsky.embed.recordWithMedia')) return extractMedia(e.media);
+  return null;
+}
+
+function normalize(item, account, byHandle) {
+  const p = item && item.post;
+  if (!p || !p.record || !p.author || !p.uri) return null;
+  const reason = item.reason && item.reason.$type || '';
+  if (reason.endsWith('#reasonPin')) return null;
+  const isRepost = reason.endsWith('#reasonRepost');
+  if (isRepost && !cfg.feed.include_reposts) return null;
+
+  const created = Date.parse(p.record.createdAt);
+  const indexed = Date.parse(p.indexedAt);
+  // Post dates can be set by the client; never trust a date in the future
+  let time = isRepost ? Date.parse(item.reason.indexedAt) : (Number.isFinite(created) && created <= Date.now() + 300000 ? created : indexed);
+  if (!Number.isFinite(time)) return null;
+
+  const known = byHandle.get(p.author.handle.toLowerCase());
+  return {
+    id: p.uri,
+    source: 'bluesky',
+    time,
+    text: (p.record.text || '').trim(),
+    handle: p.author.handle,
+    name: (known && known.name) || p.author.displayName || p.author.handle,
+    avatar: p.author.avatar || '',
+    country: known ? known.country : '',
+    repostedBy: isRepost ? (account.name || account.handle) : null,
+    media: cfg.feed.show_images ? extractMedia(p.embed) : null,
+    url: `https://bsky.app/profile/${p.author.handle}/post/${p.uri.split('/').pop()}`
+  };
+}
+
+async function fetchAccount(account, byHandle) {
+  const url = `${API}/app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(account.handle)}&limit=${POSTS_PER_ACCOUNT}&filter=posts_no_replies`;
+  const res = await fetchWithTimeout(url);
+  if (!res.ok) throw new Error(`${account.handle}: HTTP ${res.status}`);
+  const data = await res.json();
+  return (data.feed || []).map(item => normalize(item, account, byHandle)).filter(Boolean);
+}
+
+async function fetchWithTimeout(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT);
+  try { return await fetch(url, { cache: 'no-store', signal: ctrl.signal }); }
+  finally { clearTimeout(timer); }
+}
+
+/* ---------- X via FxTwitter (optional, unofficial: any failure just leaves Bluesky on screen) ---------- */
+function extractXMedia(s) {
+  const m = s.media || {};
+  const r = (w, h) => (w && h ? w / h : null);
+  const photo = (m.photos || [])[0];
+  if (photo && photo.url) return { src: photo.url, ratio: r(photo.width, photo.height), more: m.photos.length - 1 };
+  const video = (m.videos || [])[0];
+  if (video && video.thumbnail_url) return { src: video.thumbnail_url, ratio: r(video.width, video.height), video: true };
+  if (m.external && m.external.thumbnail_url) return { src: m.external.thumbnail_url, ratio: r(m.external.width, m.external.height), video: true };
+  const c = s.card;
+  if (c && c.image && c.image.url) return { src: c.image.url, ratio: r(c.image.width, c.image.height) || 1.91, card: { title: c.title || '', domain: c.domain || hostOf(c.url || '') } };
+  return null;
+}
+
+function normalizeX(s, account, byHandle) {
+  if (!s || s.type !== 'status' || !s.id || !s.author) return null;
+  if (s.replying_to && (s.replying_to.status || s.replying_to.screen_name)) return null;
+  const isRepost = !!(s.reposted_by && s.reposted_by.screen_name);
+  if (isRepost && !cfg.feed.include_reposts) return null;
+  const time = s.created_timestamp ? s.created_timestamp * 1000 : Date.parse(s.created_at);
+  if (!Number.isFinite(time) || time > Date.now() + 300000) return null;
+  const handle = s.author.screen_name || account.handle;
+  const known = byHandle.get(handle.toLowerCase());
+  let text = String(s.text || '').replace(/\s*https:\/\/t\.co\/\w+\s*$/, '').trim();
+  let translatedFrom = '';
+  const tr = s.translation;
+  if (cfg.x.translate && tr && tr.text && tr.source_lang && tr.source_lang !== 'en') {
+    text = tr.text.trim();
+    translatedFrom = tr.source_lang_en || tr.source_lang;
+  }
+  return {
+    id: `x:${s.id}`,
+    source: 'x',
+    time,
+    text,
+    handle,
+    name: (known && known.name) || s.author.name || handle,
+    avatar: s.author.avatar_url || '',
+    country: known ? known.country : '',
+    repostedBy: isRepost ? (account.name || account.handle) : null,
+    media: cfg.feed.show_images ? extractXMedia(s) : null,
+    url: s.url || `https://x.com/${handle}/status/${s.id}`,
+    translatedFrom
+  };
+}
+
+async function fetchXAccount(account, byHandle) {
+  const lang = cfg.x.translate ? '&lang=en' : '';
+  const res = await fetchWithTimeout(`${FX_API}/profile/${encodeURIComponent(account.handle)}/statuses?count=${POSTS_PER_ACCOUNT}${lang}`);
+  if (!res.ok) throw new Error(`X @${account.handle}: HTTP ${res.status}`);
+  const data = await res.json();
+  if (!data || !Array.isArray(data.results)) throw new Error(`X @${account.handle}: unexpected answer`);
+  return data.results.map(s => normalizeX(s, account, byHandle)).filter(Boolean);
+}
+
+function matchesFilter(post) {
+  if (!cfg.filter.enabled) return true;
+  const terms = [...(cfg.filter.hashtags || []), ...(cfg.filter.keywords || [])].map(t => t.toLowerCase()).filter(Boolean);
+  if (!terms.length) return true;
+  const hay = `${post.text} ${post.media && post.media.card ? post.media.card.title : ''}`.toLowerCase();
+  return terms.some(t => hay.includes(t));
+}
+
+/* ---------- AI headlines (written every 30 min by the GitHub Action into ai.json) ---------- */
+let aiHeadlines = {};
+
+// Read ai.json from the published site and straight from the repository, keep the newest copy
+async function loadAI() {
+  if (!cfg.ai.headlines) { aiHeadlines = {}; return; }
+  const urls = [`ai.json?t=${Date.now()}`];
+  if (location.hostname.endsWith('.github.io')) {
+    const owner = location.hostname.split('.')[0];
+    const repo = location.pathname.split('/').filter(Boolean)[0];
+    if (repo) urls.push(`https://raw.githubusercontent.com/${owner}/${repo}/main/ai.json?t=${Date.now()}`);
+  }
+  const copies = await Promise.allSettled(urls.map(async u => {
+    const res = await fetchWithTimeout(u);
+    if (!res.ok) throw new Error(`ai.json HTTP ${res.status}`);
+    return res.json();
+  }));
+  const best = copies.filter(c => c.status === 'fulfilled' && c.value && c.value.headlines)
+    .map(c => c.value).sort((a, b) => Date.parse(b.generated_at || 0) - Date.parse(a.generated_at || 0))[0];
+  if (best) aiHeadlines = best.headlines;
+}
+const headlineFor = p => (cfg.ai.headlines && aiHeadlines[p.id] && aiHeadlines[p.id].headline) || '';
+
+/* ---------- State ---------- */
+let posts = [];
+let xHealthy = true;
+let lastSuccess = 0;
+let current = 0;
+let rotateStartedAt = Date.now();
+let rotateTimer = null;
+let refreshTimer = null;
+
+async function refresh() {
+  await loadConfig();
+  await loadAI().catch(err => console.warn(err));
+  const byHandle = new Map(cfg.accounts.map(a => [String(a.handle).toLowerCase(), a]));
+  const xOn = !!(cfg.x.enabled && cfg.x.accounts.length);
+  const byXHandle = new Map(cfg.x.accounts.map(a => [String(a.handle).toLowerCase(), a]));
+  if (!cfg.accounts.length && !xOn) { posts = []; renderAll('No accounts yet. Add some in the editor.'); return; }
+
+  const [bsky, xs] = await Promise.all([
+    Promise.allSettled(cfg.accounts.map(a => fetchAccount(a, byHandle))),
+    Promise.allSettled(xOn ? cfg.x.accounts.map(a => fetchXAccount(a, byXHandle)) : [])
+  ]);
+  xHealthy = !xOn || xs.some(r => r.status === 'fulfilled');
+  const results = [...bsky, ...xs];
+  const ok = results.filter(r => r.status === 'fulfilled');
+  results.filter(r => r.status === 'rejected').forEach(r => console.warn(r.reason));
+  if (!ok.length) { renderStatus(false); if (!posts.length) renderAll('Connecting to Bluesky…'); return; }
+
+  // Merge, drop duplicates (the same post reposted by several accounts), newest first
+  const seen = new Map();
+  ok.flatMap(r => r.value).filter(matchesFilter).forEach(p => {
+    const prev = seen.get(p.id);
+    if (!prev || (prev.repostedBy && !p.repostedBy)) seen.set(p.id, p);
+  });
+  let fresh = [...seen.values()].sort((a, b) => b.time - a.time);
+  const cutoff = Date.now() - (cfg.feed.max_age_hours || 48) * 3600000;
+  const recent = fresh.filter(p => p.time >= cutoff);
+  fresh = recent.length >= MIN_POSTS ? recent : fresh.slice(0, MIN_POSTS);
+
+  const previousTop = posts[0] && posts[0].id;
+  posts = fresh;
+  lastSuccess = Date.now();
+  if (posts[0] && posts[0].id !== previousTop) { current = 0; rotateStartedAt = Date.now(); }
+  renderAll(cfg.filter.enabled ? 'No recent posts match the topic filter.' : 'No recent posts.');
+}
+
+/* ---------- Rendering ---------- */
+function renderStatus(online) {
+  const box = $('status');
+  box.dataset.state = online ? 'live' : 'offline';
+  if (online) {
+    $('status-main').textContent = 'Live';
+    $('status-sub').textContent = `Updated ${hm(lastSuccess)} NY`;
+    $('status-x').hidden = xHealthy;
+  } else {
+    $('status-main').textContent = 'Connection lost';
+    $('status-sub').textContent = lastSuccess ? `Last update ${hm(lastSuccess)} NY` : 'Retrying…';
+  }
+}
+
+function rotationLength() { return Math.min(posts.length, ROTATION_SIZE); }
+function currentPost() { return posts.length ? posts[current % rotationLength()] : null; }
+
+let currentBox = null;
+function renderPost(emptyMessage, box = currentBox || (currentBox = $('post'))) {
+  box.replaceChildren();
+  const p = currentPost();
+  if (!p) { box.append(el('p', 'empty', emptyMessage || '')); return; }
+
+  if (p.repostedBy) box.append(el('p', 'repost', `Reposted by ${p.repostedBy}`));
+
+  const author = el('div', 'author');
+  author.append(avatarNode(p));
+  const who = el('div', 'who');
+  const name = el('div', 'name');
+  const f = flag(p.country);
+  if (f) name.append(el('span', 'flag', f));
+  name.append(document.createTextNode(p.name));
+  who.append(name, el('div', 'meta', `@${p.handle} on ${platformName(p)}  ·  ${ago(p.time)}`));
+  author.append(who);
+  // Small QR code on the right of the account line, so the text can use the full width
+  const code = qrNode(p.url);
+  if (code) {
+    const qr = el('div', 'qrbox');
+    qr.append(code, el('p', 'qr-label', `Open on ${platformName(p)}`));
+    author.append(qr);
+  }
+  box.append(author);
+
+  let media = null;
+  if (p.media && p.media.src) {
+    media = el('div', 'media');
+    media.style.height = `${mediaHeight(p.media.ratio)}px`;
+    // Blurred copy fills the frame so the real picture is never cropped
+    const backdrop = el('img', 'backdrop');
+    backdrop.alt = '';
+    backdrop.src = p.media.src;
+    const img = el('img');
+    img.alt = p.media.alt || '';
+    img.src = p.media.src;
+    img.onerror = () => { media.remove(); fitPost(box, false); };
+    img.onload = () => {
+      // Older posts may not declare their proportions: use the real ones
+      if (!p.media.ratio && img.naturalWidth && img.naturalHeight) {
+        p.media.ratio = img.naturalWidth / img.naturalHeight;
+        media.style.height = `${mediaHeight(p.media.ratio)}px`;
+        fitPost(box, true);
+      }
+    };
+    media.append(backdrop, img);
+    if (p.media.video) media.append(el('span', 'tag', 'Video'));
+    else if (p.media.more > 0) media.append(el('span', 'tag', `+${p.media.more} photo${p.media.more > 1 ? 's' : ''}`));
+    if (p.media.card) {
+      const card = el('div', 'card');
+      if (p.media.card.title) card.append(el('b', null, p.media.card.title));
+      if (p.media.card.domain) card.append(el('span', null, p.media.card.domain));
+      media.append(card);
+    }
+    box.append(media);
+  }
+
+  const row = el('div', 'textrow');
+  const headline = headlineFor(p);
+  if (p.text || headline) {
+    const col = el('div', 'textcol');
+    if (headline) col.append(el('h2', 'headline', headline));
+    if (p.text) col.append(richText(p.text, headline ? 'text small' : 'text'));
+    const notes = [];
+    if (p.translatedFrom) notes.push(`Translated from ${p.translatedFrom}`);
+    if (headline) notes.push('Headline written by AI');
+    if (notes.length) col.append(el('p', 'translated', notes.join('  ·  ')));
+    row.append(col);
+  }
+  box.append(row);
+
+  fitPost(box, !!media);
+}
+
+// Height that shows the whole picture at full width, within what the screen can hold
+function mediaHeight(ratio) {
+  return Math.round(Math.min(MEDIA_MAX_HEIGHT, Math.max(300, 936 / (ratio || 1.6))));
+}
+
+// Shrink the text, then the picture, until everything fits above the progress bar
+function fitPost(box, hasMedia) {
+  const text = box.querySelector('.text');
+  const media = box.querySelector('.media');
+  const head = box.querySelector('.headline');
+  if (head) {
+    // Body text gives way first, then the headline, then the picture
+    let hs = media ? 52 : 62, ts = media ? 30 : 36;
+    head.style.fontSize = `${hs}px`;
+    if (text) text.style.fontSize = `${ts}px`;
+    while (overflows(box) && text && ts > 26) { ts -= 2; text.style.fontSize = `${ts}px`; }
+    while (overflows(box) && hs > 40) { hs -= 2; head.style.fontSize = `${hs}px`; }
+    if (media) {
+      let h = parseInt(media.style.height, 10);
+      while (overflows(box) && h > 260) { h -= 20; media.style.height = `${h}px`; }
+    }
+    return;
+  }
+  let size = hasMedia && media ? 46 : 64;
+  const min = 36;
+  if (text) {
+    text.style.fontSize = `${size}px`;
+    while (overflows(box) && size > min) { size -= 2; text.style.fontSize = `${size}px`; }
+  }
+  if (media) {
+    let h = parseInt(media.style.height, 10);
+    while (overflows(box) && h > 260) { h -= 20; media.style.height = `${h}px`; }
+  }
+}
+
+function platformName(p) { return p.source === 'x' ? 'X' : 'Bluesky'; }
+
+function renderQueue() {
+  const box = $('queue');
+  box.replaceChildren();
+  const shown = currentPost();
+  posts.filter(p => p !== shown).slice(0, QUEUE_SIZE).forEach(p => {
+    const row = el('div', 'q');
+    row.append(avatarNode(p));
+    const mid = el('div');
+    mid.append(el('div', 'q-name', `${flag(p.country) ? flag(p.country) + ' ' : ''}${p.name}`));
+    mid.append(el('div', 'q-text', headlineFor(p) || p.text || (p.media && p.media.card ? p.media.card.title : 'Photo')));
+    row.append(mid, el('div', 'q-time', hm(p.time)));
+    box.append(row);
+  });
+}
+
+function renderAll(emptyMessage) {
+  renderStatus(!!lastSuccess && Date.now() - lastSuccess < 3 * 60000 + (cfg.feed.refresh_minutes || 5) * 60000);
+  renderPost(emptyMessage);
+  renderQueue();
+}
+
+/* ---------- Rotation ---------- */
+function startRotation() {
+  clearInterval(rotateTimer);
+  const every = Math.max(6, cfg.feed.rotate_seconds || 15) * 1000;
+  rotateStartedAt = Date.now();
+  rotateTimer = setInterval(() => {
+    if (rotationLength() < 2) { rotateStartedAt = Date.now(); return; }
+    slideToNext();
+  }, every);
+}
+
+// The next post comes up from below while the current one leaves through the top
+function slideToNext() {
+  const viewport = $('viewport');
+  const oldBox = currentBox || $('post');
+  current = (current + 1) % rotationLength();
+  const newBox = el('div', 'post');
+  viewport.append(newBox);
+  renderPost('', newBox);
+  currentBox = newBox;
+  renderQueue();
+  rotateStartedAt = Date.now();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { oldBox.remove(); return; }
+  const distance = viewport.clientWidth + 72;
+  newBox.style.transform = `translateX(${distance}px)`;
+  newBox.getBoundingClientRect(); // lock the start position before animating
+  oldBox.classList.add('slide');
+  newBox.classList.add('slide');
+  oldBox.style.transform = `translateX(${-distance * 0.25}px) scale(.94)`;
+  oldBox.style.opacity = '0';
+  newBox.style.transform = 'translateX(0)';
+  setTimeout(() => { oldBox.remove(); newBox.classList.remove('slide'); }, 950);
+}
+
+function tickProgress() {
+  const every = Math.max(6, cfg.feed.rotate_seconds || 15) * 1000;
+  const p = Math.min(1, (Date.now() - rotateStartedAt) / every);
+  $('progress').style.width = rotationLength() > 1 ? `${p * 100}%` : '0';
+  requestAnimationFrame(tickProgress);
+}
+
+function tickClocks() {
+  document.querySelectorAll('[data-tz]').forEach(n => { n.textContent = hm(Date.now(), n.dataset.tz); });
+}
+
+/* ---------- Start ---------- */
+async function start() {
+  await refresh();
+  startRotation();
+  const schedule = () => {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(async () => {
+      const before = cfg.feed.rotate_seconds;
+      await refresh();
+      if (cfg.feed.rotate_seconds !== before) startRotation();
+      schedule();
+    }, Math.max(2, cfg.feed.refresh_minutes || 5) * 60000);
+  };
+  schedule();
+}
+
+start();
+setInterval(tickClocks, 1000);
+tickClocks();
+requestAnimationFrame(tickProgress);
+setTimeout(() => location.reload(), 12 * 3600 * 1000); // fresh start twice a day
+</script>
+</body>
+</html>

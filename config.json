@@ -1,0 +1,60 @@
+{
+  "display": {
+    "title": "Press Wall",
+    "subtitle": "Journalists and media covering the UN",
+    "show_logo": false
+  },
+  "accounts": [],
+  "filter": {
+    "enabled": false,
+    "hashtags": [
+      "#UNGA81",
+      "#UNGA"
+    ],
+    "keywords": [
+      "United Nations",
+      "UN Security Council"
+    ]
+  },
+  "feed": {
+    "refresh_minutes": 5,
+    "rotate_seconds": 15,
+    "max_age_hours": 24,
+    "include_reposts": false,
+    "show_images": true
+  },
+  "x": {
+    "enabled": true,
+    "translate": true,
+    "accounts": [
+      {
+        "handle": "AP",
+        "name": "The Associated Press",
+        "country": ""
+      },
+      {
+        "handle": "Reuters",
+        "name": "Reuters",
+        "country": ""
+      },
+      {
+        "handle": "AFP",
+        "name": "AFP News Agency",
+        "country": ""
+      },
+      {
+        "handle": "BBCWorld",
+        "name": "BBC News (World)",
+        "country": ""
+      },
+      {
+        "handle": "AJEnglish",
+        "name": "Al Jazeera English",
+        "country": ""
+      }
+    ]
+  },
+  "ai": {
+    "headlines": false
+  }
+}

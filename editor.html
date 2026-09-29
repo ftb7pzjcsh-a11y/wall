@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Réglages du mur presse</title>
+<style>
+  :root {
+    --navy-deep: #06172D;
+    --panel: #0F2C50;
+    --field: #0A2342;
+    --un-blue: #009EDB;
+    --paper: #F4F7FA;
+    --muted: #9DB3C8;
+    --rule: #1E3D63;
+    --gold: #F2B53A;
+    --red: #FF7A6B;
+    --green: #4CD3A5;
+    --font: Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--navy-deep); color: var(--paper); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 24px 140px; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+  h1 { font-size: 34px; font-weight: 700; margin: 0 0 6px; letter-spacing: -.5px; }
+  .lede { color: var(--muted); margin: 0; max-width: 620px; }
+  a.open { color: var(--un-blue); text-decoration: none; white-space: nowrap; border: 1px solid var(--rule); padding: 9px 14px; border-radius: 8px; }
+  section { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  h2 { font-size: 20px; margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+  label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+  input, select { width: 100%; background: var(--field); color: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; font: inherit; }
+  textarea { width: 100%; background: var(--field); color: var(--paper); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; font: inherit; min-height: 90px; resize: vertical; }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--un-blue); outline-offset: 1px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .field { margin-bottom: 16px; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; padding: 10px 16px; border: 1px solid var(--rule); background: var(--field); color: var(--paper); }
+  button.primary { background: var(--un-blue); border-color: var(--un-blue); color: #fff; font-weight: 500; }
+  button.ghost { background: transparent; }
+  button.icon { padding: 6px 10px; color: var(--muted); background: transparent; border-color: transparent; }
+  button.icon:hover { color: var(--red); }
+  button:disabled { opacity: .5; cursor: default; }
+
+  .preview { background: #0A2342; border-radius: 10px; padding: 22px 26px; margin-top: 4px; border: 1px solid var(--rule); }
+  .preview b { display: block; font-size: 44px; font-weight: 900; letter-spacing: -1.5px; line-height: 1; }
+  .preview span { color: var(--muted); font-size: 15px; display: block; }
+  .preview img { display: block; height: 56px; width: auto; margin-bottom: 10px; }
+  .preview [hidden] { display: none; }
+
+  /* Search */
+  .search { position: relative; margin-bottom: 18px; }
+  .results { position: absolute; left: 0; right: 0; top: calc(100% + 6px); background: var(--field); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; z-index: 5; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+  .results[hidden] { display: none; }
+  .result { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; padding: 10px 14px; cursor: pointer; border-top: 1px solid var(--rule); }
+  .result:first-child { border-top: 0; }
+  .result:hover, .result.active { background: var(--panel); }
+  .result small { display: block; color: var(--muted); }
+  .result em { font-style: normal; font-size: 13px; color: var(--muted); }
+  .results p { margin: 0; padding: 12px 14px; color: var(--muted); font-size: 14px; }
+
+  /* Accounts */
+  .acc-head, .acc-row { display: grid; grid-template-columns: 40px 1.3fr 1.3fr 64px 110px 36px; gap: 10px; align-items: center; }
+  .acc-head { font-size: 13px; color: var(--muted); padding: 0 0 8px; }
+  .acc-row { padding: 7px 0; border-top: 1px solid var(--rule); }
+  .acc-row input { padding: 8px 10px; }
+  .acc-row input.bad { border-color: var(--red); }
+  .av { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--rule); display: block; }
+  .av-empty { display: grid; place-items: center; font-size: 15px; font-weight: 700; color: var(--muted); }
+  .check { font-size: 13px; line-height: 1.3; }
+  .check.ok { color: var(--green); }
+  .check.warn { color: var(--gold); }
+  .check.err { color: var(--red); }
+  .acc-tools { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+  .count { color: var(--muted); font-size: 14px; margin-left: auto; }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+  details textarea { margin-top: 10px; }
+
+  /* Chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: var(--field); border: 1px solid var(--rule); border-radius: 8px; min-height: 48px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: var(--rule); border-radius: 16px; padding: 4px 6px 4px 12px; font-size: 14px; }
+  .chip button { border: 0; background: transparent; color: var(--muted); padding: 0 6px; font-size: 16px; line-height: 1; }
+  .chip button:hover { color: var(--red); }
+  .chips input { flex: 1; min-width: 150px; border: 0; background: transparent; padding: 4px; }
+  .chips input:focus { outline: none; }
+  .toggle { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; color: var(--paper); font-size: 15px; }
+  .toggle input { width: auto; }
+  .filter-body.off, .x-body.off { opacity: .45; }
+  .beta { font-size: 12px; font-weight: 500; color: var(--navy-deep); background: var(--gold); border-radius: 10px; padding: 2px 9px; vertical-align: 3px; margin-left: 8px; }
+  .xtest { font-size: 14px; margin: 14px 0 0; }
+  .xtest.ok { color: var(--green); }
+  .xtest.err { color: var(--red); }
+
+  .savebar { position: fixed; left: 0; right: 0; bottom: 0; background: #0A2342; border-top: 1px solid var(--rule); }
+  .savebar-inner { max-width: 980px; margin: 0 auto; padding: 14px 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  #status { font-size: 14px; color: var(--muted); margin-right: auto; }
+  #status.ok { color: var(--green); }
+  #status.err { color: var(--red); }
+  #status.dirty { color: var(--gold); }
+
+  @media (max-width: 760px) {
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    .acc-head { display: none; }
+    .acc-row { grid-template-columns: 40px 1fr 36px; }
+    .acc-row > :nth-child(3), .acc-row > :nth-child(4), .acc-row > :nth-child(5) { grid-column: 2 / 3; }
+    .top { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div>
+      <h1>Réglages du mur presse</h1>
+      <p class="lede">Les changements s'appliquent aux écrans au prochain rafraîchissement, quelques minutes après l'enregistrement.</p>
+    </div>
+    <a class="open" href="./" target="_blank" rel="noopener">Voir l'écran ↗</a>
+  </div>
+
+  <section>
+    <h2>Affichage</h2>
+    <p class="hint">Ce qui apparaît en haut de l'écran.</p>
+    <div class="grid2">
+      <div class="field"><label for="title">Titre</label><input id="title" maxlength="24"></div>
+      <div class="field"><label for="subtitle">Sous-titre</label><input id="subtitle" maxlength="80"></div>
+    </div>
+    <label class="toggle"><input type="checkbox" id="show-logo"> Afficher le logo des Nations Unies à la place du titre</label>
+    <div class="preview" aria-hidden="true"><img id="pv-logo" src="logo.png" alt=""><b id="pv-title"></b><span id="pv-sub"></span></div>
+  </section>
+
+  <section>
+    <h2>Comptes Bluesky</h2>
+    <p class="hint">Cherche un compte par nom, ou colle son identifiant (ex. un.org). Un identifiant en nom de domaine, comme unicef.org, prouve que le compte appartient bien à l'organisation.</p>
+    <div class="search">
+      <label for="search">Rechercher sur Bluesky</label>
+      <input id="search" placeholder="UNICEF, mission permanente, ministère…" autocomplete="off">
+      <div class="results" id="results" hidden></div>
+    </div>
+    <div class="acc-head"><span></span><span>Identifiant</span><span>Nom affiché</span><span>Pays</span><span>Vérification</span><span></span></div>
+    <div id="accounts"></div>
+    <div class="acc-tools">
+      <button type="button" id="add-account">Ajouter une ligne vide</button>
+      <button type="button" class="ghost" id="recheck">Revérifier tous les comptes</button>
+      <span class="count" id="acc-count"></span>
+    </div>
+    <details>
+      <summary>Coller plusieurs comptes d'un coup</summary>
+      <textarea id="bulk" placeholder="Un compte par ligne, par exemple :&#10;un.org&#10;@unicef.org&#10;https://bsky.app/profile/unhcr.org"></textarea>
+      <button type="button" id="bulk-add" style="margin-top:10px">Ajouter ces comptes</button>
+    </details>
+  </section>
+
+  <section>
+    <h2>Comptes X <span class="beta">Expérimental</span></h2>
+    <p class="hint">Lus via FxTwitter, un service gratuit et non officiel qui peut cesser de fonctionner à tout moment. Si X ne répond plus, l'écran continue avec Bluesky seul et affiche « X paused » dans le coin.</p>
+    <label class="toggle"><input type="checkbox" id="x-on"> Afficher aussi les posts X</label>
+    <div class="x-body" id="x-body">
+      <label class="toggle"><input type="checkbox" id="x-translate"> Traduire en anglais les posts X rédigés dans une autre langue</label>
+      <div class="acc-head"><span></span><span>Compte X</span><span>Nom affiché</span><span>Pays</span><span>Vérification</span><span></span></div>
+      <div id="x-accounts"></div>
+      <div class="acc-tools">
+        <button type="button" id="x-add">Ajouter un compte</button>
+        <button type="button" class="ghost" id="x-test">Tester la connexion à X</button>
+        <span class="count" id="x-count"></span>
+      </div>
+      <p class="xtest" id="x-test-result"></p>
+      <details>
+        <summary>Coller plusieurs comptes d'un coup</summary>
+        <textarea id="x-bulk" placeholder="Un compte par ligne, par exemple :&#10;@UN&#10;https://x.com/antonioguterres&#10;UN_PGA"></textarea>
+        <button type="button" id="x-bulk-add" style="margin-top:10px">Ajouter ces comptes</button>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>Titres par IA <span class="beta">Expérimental</span></h2>
+    <p class="hint">Toutes les 30 minutes, GitHub écrit un titre court en anglais pour chaque nouveau post, avec un modèle d'IA gratuit (GitHub Models). L'écran l'affiche au-dessus du texte, avec la mention « Headline written by AI ». Sans titre disponible, le post s'affiche comme avant.</p>
+    <label class="toggle"><input type="checkbox" id="ai-on"> Afficher un titre court généré par IA pour chaque post</label>
+    <p class="xtest" id="ai-status"></p>
+  </section>
+
+  <section>
+    <h2>Filtre par sujet</h2>
+    <p class="hint">Désactivé, l'écran montre tous les posts des comptes listés. Activé, seulement ceux qui contiennent au moins un hashtag ou mot-clé.</p>
+    <label class="toggle"><input type="checkbox" id="filter-on"> N'afficher que les posts sur ce sujet</label>
+    <div class="filter-body" id="filter-body">
+      <div class="grid2">
+        <div class="field"><label for="hashtags-input">Hashtags</label><div class="chips" id="hashtags"></div></div>
+        <div class="field"><label for="keywords-input">Mots-clés</label><div class="chips" id="keywords"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Rythme</h2>
+    <p class="hint">Fréquence de mise à jour et défilement à l'écran.</p>
+    <div class="grid3">
+      <div class="field">
+        <label for="refresh">Chercher les nouveaux posts</label>
+        <select id="refresh">
+          <option value="2">Toutes les 2 minutes</option>
+          <option value="5">Toutes les 5 minutes</option>
+          <option value="10">Toutes les 10 minutes</option>
+          <option value="15">Toutes les 15 minutes</option>
+          <option value="30">Toutes les 30 minutes</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="rotate">Durée par post</label>
+        <select id="rotate">
+          <option value="8">8 secondes</option>
+          <option value="12">12 secondes</option>
+          <option value="15">15 secondes</option>
+          <option value="20">20 secondes</option>
+          <option value="30">30 secondes</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="maxage">Posts affichés</label>
+        <select id="maxage">
+          <option value="12">Moins de 12 heures</option>
+          <option value="24">Moins de 24 heures</option>
+          <option value="48">Moins de 48 heures</option>
+          <option value="168">Moins d'une semaine</option>
+        </select>
+      </div>
+    </div>
+    <label class="toggle"><input type="checkbox" id="images"> Afficher les images et vignettes vidéo</label>
+    <label class="toggle"><input type="checkbox" id="reposts"> Inclure les reposts (posts d'autres comptes partagés par les comptes listés)</label>
+  </section>
+
+  <section>
+    <h2>Connexion GitHub</h2>
+    <p class="hint">Nécessaire seulement pour enregistrer directement. Le jeton reste dans ce navigateur et n'est envoyé qu'à GitHub.</p>
+    <div class="grid2">
+      <div class="field"><label for="owner">Compte GitHub</label><input id="owner" autocomplete="off"></div>
+      <div class="field"><label for="repo">Dépôt</label><input id="repo" autocomplete="off"></div>
+    </div>
+    <div class="field"><label for="token">Jeton d'accès (fine-grained, Contents en lecture et écriture sur ce dépôt uniquement)</label><input id="token" type="password" autocomplete="off" placeholder="github_pat_…"></div>
+    <label class="toggle"><input type="checkbox" id="remember"> Se souvenir du jeton sur cet ordinateur</label>
+  </section>
+</main>
+
+<div class="savebar">
+  <div class="savebar-inner">
+    <span id="status">Chargement…</span>
+    <button type="button" class="ghost" id="download">Télécharger config.json</button>
+    <button type="button" class="primary" id="save">Enregistrer sur GitHub</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const API = 'https://public.api.bsky.app/xrpc';
+const FX_API = 'https://api.fxtwitter.com/2';
+const CONFIG_PATH = 'config.json';
+const BRANCH = 'main';
+const TOKEN_KEY = 'presswall-editor:token';
+const DEFAULTS = {
+  display: { title: 'Press Wall', subtitle: 'Journalists and media covering the UN', show_logo: false },
+  accounts: [],
+  filter: { enabled: false, hashtags: [], keywords: [] },
+  feed: { refresh_minutes: 5, rotate_seconds: 15, max_age_hours: 48, include_reposts: false, show_images: true },
+  x: { enabled: false, translate: true, accounts: [] },
+  ai: { headlines: false }
+};
+
+let config = structuredClone(DEFAULTS);
+let fileSha = null;
+let dirty = false;
+const profiles = new Map(); // handle -> {state: 'ok'|'missing'|'error'|'loading', avatar, displayName, verified}
+
+const $ = id => document.getElementById(id);
+const el = (tag, props = {}) => Object.assign(document.createElement(tag), props);
+
+/* ---------- Status ---------- */
+function setStatus(text, kind = '') { const s = $('status'); s.textContent = text; s.className = kind; }
+function markDirty() { dirty = true; setStatus('Modifications non enregistrées', 'dirty'); }
+addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- Handles ---------- */
+function cleanHandle(raw) {
+  let h = String(raw || '').trim();
+  const m = h.match(/bsky\.app\/profile\/([^/?#\s]+)/i);
+  if (m) h = decodeURIComponent(m[1]);
+  h = h.replace(/^@/, '').trim();
+  return h.startsWith('did:') ? h : h.toLowerCase();
+}
+const validHandle = h => /^did:[a-z]+:[a-zA-Z0-9._:%-]+$/.test(h) || /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$/.test(h);
+const isDomainHandle = h => validHandle(h) && !h.startsWith('did:') && !/\.bsky\.social$/.test(h);
+const validCountry = c => c === '' || /^[a-z]{2}$/.test(c);
+
+async function lookup(handle) {
+  if (!validHandle(handle)) return;
+  profiles.set(handle, { state: 'loading' });
+  renderChecks();
+  try {
+    const res = await fetch(`${API}/app.bsky.actor.getProfile?actor=${encodeURIComponent(handle)}`);
+    if (res.status === 400 || res.status === 404) { profiles.set(handle, { state: 'missing' }); }
+    else if (!res.ok) { profiles.set(handle, { state: 'error' }); }
+    else {
+      const p = await res.json();
+      const verified = p.verification && p.verification.verifiedStatus === 'valid';
+      profiles.set(handle, { state: 'ok', avatar: p.avatar || '', displayName: p.displayName || '', verified, posts: p.postsCount });
+      const acc = config.accounts.find(a => a.handle === handle);
+      if (acc && !acc.name && p.displayName) { acc.name = p.displayName; renderAccounts(); markDirty(); return; }
+    }
+  } catch (_) {
+    profiles.set(handle, { state: 'error' });
+  }
+  renderChecks();
+}
+
+function checkLabel(handle) {
+  if (!handle) return ['', ''];
+  if (!validHandle(handle)) return ['Identifiant invalide', 'err'];
+  const p = profiles.get(handle);
+  if (!p || p.state === 'loading') return ['Vérification…', ''];
+  if (p.state === 'missing') return ['Introuvable', 'err'];
+  if (p.state === 'error') return ['Bluesky injoignable', 'warn'];
+  if (isDomainHandle(handle)) return ['✓ Domaine vérifié', 'ok'];
+  if (p.verified) return ['✓ Vérifié Bluesky', 'ok'];
+  return ['Compte non vérifié', 'warn'];
+}
+
+/* ---------- Accounts table ---------- */
+function avatarEl(handle, name) {
+  const p = profiles.get(handle);
+  if (p && p.avatar) {
+    const img = el('img', { className: 'av', src: p.avatar, alt: '' });
+    img.onerror = () => img.replaceWith(el('div', { className: 'av av-empty', textContent: (name || handle || '?').charAt(0).toUpperCase() }));
+    return img;
+  }
+  return el('div', { className: 'av av-empty', textContent: (name || handle || '?').charAt(0).toUpperCase() });
+}
+
+function renderAccounts() {
+  const box = $('accounts');
+  box.replaceChildren();
+  config.accounts.forEach((acc, i) => {
+    const row = el('div', { className: 'acc-row' });
+    row.dataset.handle = acc.handle;
+
+    const handle = el('input', { value: acc.handle, placeholder: 'un.org', ariaLabel: 'Identifiant Bluesky' });
+    handle.oninput = () => { acc.handle = cleanHandle(handle.value); row.dataset.handle = acc.handle; markDirty(); };
+    handle.onchange = () => { handle.value = acc.handle; handle.classList.toggle('bad', !!acc.handle && !validHandle(acc.handle)); lookup(acc.handle); };
+    handle.classList.toggle('bad', !!acc.handle && !validHandle(acc.handle));
+
+    const name = el('input', { value: acc.name || '', placeholder: 'Nom affiché', ariaLabel: 'Nom affiché' });
+    name.oninput = () => { acc.name = name.value; markDirty(); };
+
+    const country = el('input', { value: acc.country || '', placeholder: 'fr', maxLength: 2, ariaLabel: 'Code pays (drapeau)' });
+    country.oninput = () => {
+      country.value = country.value.toLowerCase().replace(/[^a-z]/g, '');
+      acc.country = country.value;
+      country.classList.toggle('bad', country.value.length === 1);
+      markDirty();
+    };
+
+    const [label, kind] = checkLabel(acc.handle);
+    const check = el('span', { className: `check ${kind}`, textContent: label });
+
+    const del = el('button', { type: 'button', className: 'icon', textContent: '✕', ariaLabel: `Supprimer ${acc.handle}` });
+    del.onclick = () => { config.accounts.splice(i, 1); renderAccounts(); markDirty(); };
+
+    row.append(avatarEl(acc.handle, acc.name), handle, name, country, check, del);
+    box.append(row);
+  });
+  $('acc-count').textContent = `${config.accounts.length} compte${config.accounts.length > 1 ? 's' : ''}`;
+}
+
+// Update avatars and check labels without rebuilding inputs (keeps focus)
+function renderChecks() {
+  document.querySelectorAll('.acc-row').forEach(row => {
+    const acc = config.accounts.find(a => a.handle === row.dataset.handle);
+    if (!acc) return;
+    const [label, kind] = checkLabel(acc.handle);
+    const check = row.querySelector('.check');
+    check.textContent = label;
+    check.className = `check ${kind}`;
+    row.firstChild.replaceWith(avatarEl(acc.handle, acc.name));
+  });
+}
+
+function addAccount(handle, name = '') {
+  handle = cleanHandle(handle);
+  if (!validHandle(handle)) return false;
+  if (config.accounts.some(a => a.handle === handle)) return false;
+  config.accounts.push({ handle, name, country: '' });
+  return true;
+}
+
+$('add-account').onclick = () => {
+  config.accounts.push({ handle: '', name: '', country: '' });
+  renderAccounts();
+  markDirty();
+  const inputs = $('accounts').querySelectorAll('.acc-row input');
+  inputs[inputs.length - 3]?.focus();
+};
+
+$('recheck').onclick = () => config.accounts.forEach(a => lookup(a.handle));
+
+$('bulk-add').onclick = () => {
+  const added = [];
+  $('bulk').value.split(/[\n,;]+/).map(l => l.trim()).filter(l => l && !/\s/.test(l)).forEach(l => {
+    const h = cleanHandle(l);
+    if (addAccount(h)) added.push(h);
+  });
+  $('bulk').value = '';
+  renderAccounts();
+  added.forEach(lookup);
+  if (added.length) markDirty();
+  setStatus(added.length ? `${added.length} compte${added.length > 1 ? 's' : ''} ajouté${added.length > 1 ? 's' : ''}` : 'Aucun nouveau compte valide', added.length ? 'dirty' : 'err');
+};
+
+/* ---------- X accounts (via FxTwitter) ---------- */
+const xProfiles = new Map();
+function cleanXHandle(raw) {
+  let h = String(raw || '').trim();
+  const m = h.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})/i);
+  if (m) h = m[1];
+  return h.replace(/^@/, '').replace(/[^A-Za-z0-9_]/g, '').slice(0, 15);
+}
+const validXHandle = h => /^[A-Za-z0-9_]{1,15}$/.test(h);
+
+function renderXState() { $('x-body').classList.toggle('off', !config.x.enabled); }
+
+async function lookupX(handle) {
+  if (!validXHandle(handle)) return;
+  xProfiles.set(handle.toLowerCase(), { state: 'loading' });
+  renderXChecks();
+  try {
+    const res = await fetch(`${FX_API}/profile/${encodeURIComponent(handle)}`);
+    const data = await res.json().catch(() => null);
+    const u = data && (data.user || data.profile || (data.screen_name ? data : null));
+    if (res.status === 404 || (data && data.code === 404)) xProfiles.set(handle.toLowerCase(), { state: 'missing' });
+    else if (!res.ok || !u) xProfiles.set(handle.toLowerCase(), { state: 'error' });
+    else {
+      const v = u.verification || {};
+      xProfiles.set(handle.toLowerCase(), { state: 'ok', avatar: u.avatar_url || '', name: u.name || '', vtype: v.verified ? (v.type || 'individual') : '' });
+      const acc = config.x.accounts.find(a => a.handle.toLowerCase() === handle.toLowerCase());
+      if (acc && !acc.name && u.name) { acc.name = u.name; renderXAccounts(); markDirty(); return; }
+    }
+  } catch (_) {
+    xProfiles.set(handle.toLowerCase(), { state: 'error' });
+  }
+  renderXChecks();
+}
+
+function xCheckLabel(handle) {
+  if (!handle) return ['', ''];
+  if (!validXHandle(handle)) return ['Identifiant invalide', 'err'];
+  if (!config.x.enabled) return ['', ''];
+  const p = xProfiles.get(handle.toLowerCase());
+  if (!p || p.state === 'loading') return ['Vérification…', ''];
+  if (p.state === 'missing') return ['Introuvable', 'err'];
+  if (p.state === 'error') return ['FxTwitter injoignable', 'warn'];
+  if (p.vtype === 'government') return ['✓ Gouvernement', 'ok'];
+  if (p.vtype === 'organization') return ['✓ Organisation', 'ok'];
+  if (p.vtype) return ['✓ Vérifié', 'ok'];
+  return ['Compte non vérifié', 'warn'];
+}
+
+function xAvatarEl(handle, name) {
+  const p = xProfiles.get(String(handle).toLowerCase());
+  const letter = (name || handle || '?').charAt(0).toUpperCase();
+  if (p && p.avatar) {
+    const img = el('img', { className: 'av', src: p.avatar, alt: '' });
+    img.onerror = () => img.replaceWith(el('div', { className: 'av av-empty', textContent: letter }));
+    return img;
+  }
+  return el('div', { className: 'av av-empty', textContent: letter });
+}
+
+function renderXAccounts() {
+  const box = $('x-accounts');
+  box.replaceChildren();
+  config.x.accounts.forEach((acc, i) => {
+    const row = el('div', { className: 'acc-row' });
+    row.dataset.handle = acc.handle;
+    const handle = el('input', { value: acc.handle, placeholder: 'UN', ariaLabel: 'Compte X' });
+    handle.oninput = () => { acc.handle = cleanXHandle(handle.value); row.dataset.handle = acc.handle; markDirty(); };
+    handle.onchange = () => { handle.value = acc.handle; handle.classList.toggle('bad', !!acc.handle && !validXHandle(acc.handle)); if (config.x.enabled) lookupX(acc.handle); };
+    const name = el('input', { value: acc.name || '', placeholder: 'Nom affiché', ariaLabel: 'Nom affiché' });
+    name.oninput = () => { acc.name = name.value; markDirty(); };
+    const country = el('input', { value: acc.country || '', placeholder: 'fr', maxLength: 2, ariaLabel: 'Code pays (drapeau)' });
+    country.oninput = () => { country.value = country.value.toLowerCase().replace(/[^a-z]/g, ''); acc.country = country.value; country.classList.toggle('bad', country.value.length === 1); markDirty(); };
+    const [label, kind] = xCheckLabel(acc.handle);
+    const check = el('span', { className: `check ${kind}`, textContent: label });
+    const del = el('button', { type: 'button', className: 'icon', textContent: '✕', ariaLabel: `Supprimer @${acc.handle}` });
+    del.onclick = () => { config.x.accounts.splice(i, 1); renderXAccounts(); markDirty(); };
+    row.append(xAvatarEl(acc.handle, acc.name), handle, name, country, check, del);
+    box.append(row);
+  });
+  $('x-count').textContent = `${config.x.accounts.length} compte${config.x.accounts.length > 1 ? 's' : ''}`;
+}
+
+function renderXChecks() {
+  document.querySelectorAll('#x-accounts .acc-row').forEach(row => {
+    const acc = config.x.accounts.find(a => a.handle === row.dataset.handle);
+    if (!acc) return;
+    const [label, kind] = xCheckLabel(acc.handle);
+    const check = row.querySelector('.check');
+    check.textContent = label;
+    check.className = `check ${kind}`;
+    row.firstChild.replaceWith(xAvatarEl(acc.handle, acc.name));
+  });
+}
+
+function addXAccount(raw) {
+  const h = cleanXHandle(raw);
+  if (!validXHandle(h) || config.x.accounts.some(a => a.handle.toLowerCase() === h.toLowerCase())) return null;
+  config.x.accounts.push({ handle: h, name: '', country: '' });
+  return h;
+}
+
+$('x-add').onclick = () => {
+  config.x.accounts.push({ handle: '', name: '', country: '' });
+  renderXAccounts();
+  markDirty();
+  const inputs = $('x-accounts').querySelectorAll('.acc-row input');
+  inputs[inputs.length - 3]?.focus();
+};
+
+$('x-bulk-add').onclick = () => {
+  const added = $('x-bulk').value.split(/[\n,;]+/).map(l => l.trim()).filter(l => l && !/\s/.test(l)).map(addXAccount).filter(Boolean);
+  $('x-bulk').value = '';
+  renderXAccounts();
+  if (config.x.enabled) added.forEach(lookupX);
+  if (added.length) markDirty();
+  setStatus(added.length ? `${added.length} compte${added.length > 1 ? 's' : ''} X ajouté${added.length > 1 ? 's' : ''}` : 'Aucun nouveau compte X valide', added.length ? 'dirty' : 'err');
+};
+
+// Same request the screen makes, so the result tells you whether X works from this network
+$('x-test').onclick = async () => {
+  const out = $('x-test-result');
+  const handle = (config.x.accounts.find(a => validXHandle(a.handle)) || { handle: 'UN' }).handle;
+  out.className = 'xtest';
+  out.textContent = `Test en cours avec @${handle}…`;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch(`${FX_API}/profile/${encodeURIComponent(handle)}/statuses?count=5`, { signal: ctrl.signal });
+    clearTimeout(timer);
+    const data = await res.json();
+    const n = Array.isArray(data.results) ? data.results.length : 0;
+    if (!res.ok || !n) throw new Error(`réponse ${res.status}, aucun post`);
+    out.className = 'xtest ok';
+    out.textContent = `Ça marche : ${n} posts récupérés pour @${handle}. L'écran pourra afficher X depuis ce réseau.`;
+  } catch (err) {
+    out.className = 'xtest err';
+    out.textContent = `X ne répond pas depuis ce navigateur (${err.name === 'AbortError' ? 'délai dépassé' : err.message}). FxTwitter est peut-être en panne, ou le réseau le bloque. L'écran restera sur Bluesky.`;
+  }
+};
+
+/* ---------- Search ---------- */
+let searchTimer = null;
+let searchSeq = 0;
+$('search').oninput = () => {
+  clearTimeout(searchTimer);
+  const q = $('search').value.trim();
+  if (q.length < 2) { $('results').hidden = true; return; }
+  searchTimer = setTimeout(() => runSearch(q), 300);
+};
+$('search').onkeydown = e => { if (e.key === 'Escape') $('results').hidden = true; };
+document.addEventListener('click', e => { if (!e.target.closest('.search')) $('results').hidden = true; });
+
+async function runSearch(q) {
+  const seq = ++searchSeq;
+  const box = $('results');
+  const direct = cleanHandle(q);
+  try {
+    const res = await fetch(`${API}/app.bsky.actor.searchActorsTypeahead?q=${encodeURIComponent(q)}&limit=8`);
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (seq !== searchSeq) return;
+    box.replaceChildren();
+    const actors = data.actors || [];
+    if (!actors.length) {
+      box.append(el('p', { textContent: validHandle(direct) ? `Aucun résultat. Appuie sur Entrée pour ajouter « ${direct} » directement.` : 'Aucun résultat.' }));
+    }
+    actors.forEach(a => {
+      const row = el('div', { className: 'result' });
+      row.append(a.avatar ? el('img', { className: 'av', src: a.avatar, alt: '' }) : el('div', { className: 'av av-empty', textContent: (a.displayName || a.handle).charAt(0).toUpperCase() }));
+      const mid = el('div');
+      mid.append(el('div', { textContent: a.displayName || a.handle }), el('small', { textContent: `@${a.handle}` }));
+      row.append(mid);
+      const already = config.accounts.some(x => x.handle === a.handle);
+      const verified = a.verification && a.verification.verifiedStatus === 'valid';
+      row.append(el('em', { textContent: already ? 'Déjà ajouté' : isDomainHandle(a.handle) ? 'Domaine vérifié' : verified ? 'Vérifié' : '' }));
+      row.onclick = () => {
+        if (addAccount(a.handle, a.displayName || '')) {
+          profiles.set(a.handle, { state: 'ok', avatar: a.avatar || '', displayName: a.displayName || '', verified });
+          renderAccounts();
+          markDirty();
+          setStatus(`${a.displayName || a.handle} ajouté`, 'dirty');
+        }
+        box.hidden = true;
+        $('search').value = '';
+      };
+      box.append(row);
+    });
+    box.hidden = false;
+  } catch (_) {
+    if (seq !== searchSeq) return;
+    box.replaceChildren(el('p', { textContent: 'Recherche indisponible pour le moment. Colle l\'identifiant du compte et appuie sur Entrée.' }));
+    box.hidden = false;
+  }
+}
+
+$('search').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const h = cleanHandle($('search').value);
+  if (addAccount(h)) {
+    renderAccounts();
+    lookup(h);
+    markDirty();
+    $('search').value = '';
+    $('results').hidden = true;
+  } else if (validHandle(h)) {
+    setStatus(`${h} est déjà dans la liste`, 'err');
+  }
+});
+
+/* ---------- Chips ---------- */
+function setupChips(boxId, key, normalize, placeholder) {
+  const box = $(boxId);
+  const render = () => {
+    box.replaceChildren();
+    config.filter[key].forEach((value, i) => {
+      const chip = el('span', { className: 'chip', textContent: value });
+      const x = el('button', { type: 'button', textContent: '×', ariaLabel: `Retirer ${value}` });
+      x.onclick = () => { config.filter[key].splice(i, 1); render(); markDirty(); };
+      chip.append(x);
+      box.append(chip);
+    });
+    const input = el('input', { id: `${boxId}-input`, placeholder });
+    input.onkeydown = e => {
+      if ((e.key === 'Enter' || e.key === ',') && input.value.trim()) {
+        e.preventDefault();
+        const v = normalize(input.value);
+        if (v && !config.filter[key].includes(v)) { config.filter[key].push(v); markDirty(); }
+        render();
+        $(`${boxId}-input`).focus();
+      } else if (e.key === 'Backspace' && !input.value && config.filter[key].length) {
+        config.filter[key].pop(); render(); markDirty(); $(`${boxId}-input`).focus();
+      }
+    };
+    box.append(input);
+  };
+  box.onclick = e => { if (e.target === box) $(`${boxId}-input`).focus(); };
+  return render;
+}
+const renderHashtags = setupChips('hashtags', 'hashtags', v => { const t = v.trim().replace(/[\s,]+/g, ''); return t ? (t.startsWith('#') ? t : `#${t}`) : ''; }, '#UNGA81');
+const renderKeywords = setupChips('keywords', 'keywords', v => v.trim().replace(/,$/, ''), 'Security Council');
+
+/* ---------- Simple fields ---------- */
+function bindFields() {
+  const bindText = (id, obj, key, after) => { $(id).value = obj[key] || ''; $(id).oninput = () => { obj[key] = $(id).value; markDirty(); after && after(); }; };
+  bindText('title', config.display, 'title', renderPreview);
+  bindText('subtitle', config.display, 'subtitle', renderPreview);
+  const bindSelect = (id, key) => { $(id).value = String(config.feed[key]); $(id).onchange = () => { config.feed[key] = Number($(id).value); markDirty(); }; };
+  bindSelect('refresh', 'refresh_minutes');
+  bindSelect('rotate', 'rotate_seconds');
+  bindSelect('maxage', 'max_age_hours');
+  const bindCheck = (id, obj, key, after) => { $(id).checked = !!obj[key]; $(id).onchange = () => { obj[key] = $(id).checked; markDirty(); after && after(); }; };
+  bindCheck('images', config.feed, 'show_images');
+  bindCheck('reposts', config.feed, 'include_reposts');
+  bindCheck('filter-on', config.filter, 'enabled', renderFilterState);
+  bindCheck('x-on', config.x, 'enabled', () => { renderXState(); if (config.x.enabled) config.x.accounts.forEach(a => lookupX(a.handle)); });
+  bindCheck('x-translate', config.x, 'translate');
+  bindCheck('ai-on', config.ai, 'headlines');
+  $('show-logo').checked = config.display.show_logo === true;
+  $('show-logo').onchange = () => { config.display.show_logo = $('show-logo').checked; markDirty(); renderPreview(); };
+}
+function renderPreview() {
+  const logo = config.display.show_logo === true;
+  $('pv-logo').hidden = !logo;
+  $('pv-title').hidden = logo;
+  $('title').disabled = logo;
+  $('pv-title').textContent = config.display.title || ' ';
+  $('pv-sub').textContent = config.display.subtitle || '';
+}
+function renderFilterState() { $('filter-body').classList.toggle('off', !config.filter.enabled); }
+
+function renderAll() {
+  bindFields();
+  renderPreview();
+  renderFilterState();
+  renderHashtags();
+  renderKeywords();
+  renderAccounts();
+  renderXAccounts();
+  renderXState();
+}
+
+/* ---------- Export ---------- */
+function mergeConfig(data) {
+  const out = structuredClone(DEFAULTS);
+  if (!data || typeof data !== 'object') return out;
+  out.display = { ...out.display, ...(data.display || {}) };
+  out.filter = { ...out.filter, ...(data.filter || {}) };
+  out.feed = { ...out.feed, ...(data.feed || {}) };
+  out.filter.hashtags = Array.isArray(out.filter.hashtags) ? out.filter.hashtags : [];
+  out.filter.keywords = Array.isArray(out.filter.keywords) ? out.filter.keywords : [];
+  out.accounts = Array.isArray(data.accounts) ? data.accounts.filter(a => a && typeof a.handle === 'string').map(a => ({ handle: a.handle, name: a.name || '', country: a.country || '' })) : [];
+  out.ai = { ...out.ai, ...(data.ai || {}) };
+  out.x = { ...out.x, ...(data.x || {}) };
+  out.x.accounts = Array.isArray(out.x.accounts) ? out.x.accounts.filter(a => a && typeof a.handle === 'string').map(a => ({ handle: a.handle, name: a.name || '', country: a.country || '' })) : [];
+  return out;
+}
+
+function buildConfig() {
+  const out = structuredClone(config);
+  out.accounts = out.accounts
+    .map(a => ({ handle: cleanHandle(a.handle), name: (a.name || '').trim(), country: (a.country || '').toLowerCase() }))
+    .filter(a => a.handle);
+  const bad = out.accounts.find(a => !validHandle(a.handle) || !validCountry(a.country));
+  if (bad) throw new Error(`Identifiant ou code pays invalide : ${bad.handle}`);
+  const seen = new Set();
+  for (const a of out.accounts) { if (seen.has(a.handle)) throw new Error(`${a.handle} est présent deux fois`); seen.add(a.handle); }
+  out.x.accounts = out.x.accounts
+    .map(a => ({ handle: cleanXHandle(a.handle), name: (a.name || '').trim(), country: (a.country || '').toLowerCase() }))
+    .filter(a => a.handle);
+  const badX = out.x.accounts.find(a => !validXHandle(a.handle) || !validCountry(a.country));
+  if (badX) throw new Error(`Compte X ou code pays invalide : @${badX.handle}`);
+  const seenX = new Set();
+  for (const a of out.x.accounts) { const k = a.handle.toLowerCase(); if (seenX.has(k)) throw new Error(`@${a.handle} est présent deux fois dans X`); seenX.add(k); }
+  out.display.title = (out.display.title || '').trim() || 'Press Wall';
+  return out;
+}
+
+$('download').onclick = () => {
+  try {
+    const blob = new Blob([JSON.stringify(buildConfig(), null, 2) + '\n'], { type: 'application/json' });
+    const a = el('a', { href: URL.createObjectURL(blob), download: 'config.json' });
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus('config.json téléchargé. Dépose-le dans le dépôt pour l\'appliquer.', 'ok');
+  } catch (err) { setStatus(err.message, 'err'); }
+};
+
+/* ---------- GitHub ---------- */
+function guessRepo() {
+  if (location.hostname.endsWith('.github.io')) {
+    $('owner').value ||= location.hostname.split('.')[0];
+    $('repo').value ||= location.pathname.split('/').filter(Boolean)[0] || '';
+  }
+}
+const b64encode = str => { const bytes = new TextEncoder().encode(str); let bin = ''; bytes.forEach(b => bin += String.fromCharCode(b)); return btoa(bin); };
+const b64decode = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\n/g, '')), c => c.charCodeAt(0)));
+
+function ghUrl() {
+  const owner = $('owner').value.trim(), repo = $('repo').value.trim();
+  if (!owner || !repo) throw new Error('Indique le compte GitHub et le dépôt');
+  return `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${CONFIG_PATH}`;
+}
+function ghHeaders() {
+  const token = $('token').value.trim();
+  if (!token) throw new Error('Colle ton jeton d\'accès GitHub pour enregistrer');
+  return { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+}
+function ghError(status) {
+  if (status === 401) return 'Jeton refusé par GitHub : vérifie qu\'il est complet et pas expiré';
+  if (status === 403) return 'Le jeton n\'a pas le droit d\'écrire : accorde Contents en lecture et écriture';
+  if (status === 404) return 'Dépôt introuvable : vérifie le compte, le nom du dépôt et l\'accès du jeton';
+  if (status === 409) return 'Le fichier a changé entre-temps : recharge la page';
+  return `GitHub a répondu ${status}`;
+}
+async function fetchFromGitHub() {
+  const res = await fetch(`${ghUrl()}?ref=${BRANCH}`, { headers: ghHeaders(), cache: 'no-store' });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(ghError(res.status));
+  const data = await res.json();
+  fileSha = data.sha;
+  return JSON.parse(b64decode(data.content));
+}
+
+$('save').onclick = async () => {
+  const btn = $('save');
+  try {
+    const out = buildConfig();
+    btn.disabled = true;
+    setStatus('Enregistrement…');
+    if (fileSha === null) { try { await fetchFromGitHub(); } catch (_) {} }
+    const body = { message: 'Update screen settings', content: b64encode(JSON.stringify(out, null, 2) + '\n'), branch: BRANCH };
+    if (fileSha) body.sha = fileSha;
+    const res = await fetch(ghUrl(), { method: 'PUT', headers: { ...ghHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(ghError(res.status));
+    const data = await res.json();
+    fileSha = data.content.sha;
+    config = out;
+    dirty = false;
+    rememberToken();
+    const t = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+    setStatus(`Enregistré à ${t}. Les écrans suivront d'ici quelques minutes.`, 'ok');
+  } catch (err) {
+    setStatus(err.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+function rememberToken() {
+  try {
+    if ($('remember').checked) localStorage.setItem(TOKEN_KEY, $('token').value.trim());
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch (_) {}
+}
+$('remember').onchange = rememberToken;
+
+/* ---------- Boot ---------- */
+async function boot() {
+  guessRepo();
+  try { const saved = localStorage.getItem(TOKEN_KEY); if (saved) { $('token').value = saved; $('remember').checked = true; } } catch (_) {}
+  let data = null;
+  if ($('token').value && $('owner').value && $('repo').value) { try { data = await fetchFromGitHub(); } catch (err) { console.warn(err); } }
+  if (!data) {
+    try { const res = await fetch(`${CONFIG_PATH}?t=${Date.now()}`, { cache: 'no-store' }); if (res.ok) data = await res.json(); } catch (err) { console.warn(err); }
+  }
+  config = mergeConfig(data);
+  renderAll();
+  dirty = false;
+  setStatus(data ? 'Réglages chargés' : 'Aucun config.json trouvé : valeurs par défaut', data ? '' : 'dirty');
+  config.accounts.forEach(a => lookup(a.handle));
+  if (config.x.enabled) config.x.accounts.forEach(a => lookupX(a.handle));
+  showAIStatus();
+}
+
+// Shows when the GitHub Action last wrote headlines, so you can tell it is running
+async function showAIStatus() {
+  const out = $('ai-status');
+  try {
+    const res = await fetch(`ai.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const n = Object.keys(data.headlines || {}).length;
+    const when = new Date(data.generated_at);
+    const t = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(when);
+    const stale = Date.now() - when > 6 * 3600000;
+    out.className = `xtest ${stale ? 'err' : 'ok'}`;
+    out.textContent = `Dernière mise à jour des titres : ${t}, ${n} titre${n > 1 ? 's' : ''} disponible${n > 1 ? 's' : ''}.${stale ? ' Plus de 6 heures : vérifie l\'onglet Actions sur GitHub.' : ''}`;
+  } catch (_) {
+    out.className = 'xtest';
+    out.textContent = config.ai.headlines ? 'Aucun titre pour l\'instant. Le premier passage de GitHub a lieu dans les 30 minutes après l\'enregistrement.' : '';
+  }
+}
+boot();
+</script>
+</body>
+</html>
