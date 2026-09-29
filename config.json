@@ -8,12 +8,16 @@
   "filter": {
     "enabled": false,
     "hashtags": [
-      "#UNGA81",
-      "#UNGA"
+      "#GeneralAssembly#UnitedNations#UN#Guterres#UNGA",
+      "#UNGA81"
     ],
     "keywords": [
       "United Nations",
-      "UN Security Council"
+      "UN Security Council",
+      "Security Council",
+      "General Assembly",
+      "UN Secretary-General",
+      "Secretary-General"
     ]
   },
   "feed": {
