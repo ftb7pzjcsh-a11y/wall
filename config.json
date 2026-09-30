@@ -29,6 +29,51 @@
       "handle": "reuters.com",
       "name": "Reuters",
       "country": ""
+    },
+    {
+      "handle": "nbcnews.com",
+      "name": "NBC News",
+      "country": ""
+    },
+    {
+      "handle": "npr.org",
+      "name": "NPR",
+      "country": ""
+    },
+    {
+      "handle": "washingtonpost.com",
+      "name": "The Washington Post",
+      "country": ""
+    },
+    {
+      "handle": "nytimes.com",
+      "name": "The New York Times",
+      "country": ""
+    },
+    {
+      "handle": "bbcnewsnight.bsky.social",
+      "name": "BBC Newsnight",
+      "country": ""
+    },
+    {
+      "handle": "bostonglobe.com",
+      "name": "The Boston Globe",
+      "country": ""
+    },
+    {
+      "handle": "newsweek.com",
+      "name": "Newsweek",
+      "country": ""
+    },
+    {
+      "handle": "wsj.com",
+      "name": "The Wall Street Journal",
+      "country": ""
+    },
+    {
+      "handle": "euronews.com",
+      "name": "Euronews",
+      "country": ""
     }
   ],
   "filter": {
