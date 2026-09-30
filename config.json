@@ -74,6 +74,11 @@
       "handle": "euronews.com",
       "name": "Euronews",
       "country": ""
+    },
+    {
+      "handle": "apnews.com",
+      "name": "The Associated Press",
+      "country": ""
     }
   ],
   "filter": {
