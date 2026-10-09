@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<!-- X refuses its videos (403) when the request says it comes from another site: send no referrer -->
+<meta name="referrer" content="no-referrer">
 <title>Press Wall</title>
 <style>
   :root {
@@ -63,8 +65,15 @@
   .name .flag { margin-right: 12px; }
   .meta { font-size: 27px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .media { position: relative; margin-top: 36px; border-radius: 30px; overflow: hidden; clip-path: inset(0 round 30px); isolation: isolate; background: var(--navy-deep); flex-shrink: 0; }
+  /* Video posts: the frame takes the video's own shape (vertical, square or wide) and stays centred */
+  .media.hug { align-self: center; width: auto; max-width: 100%; }
+  .media.hug img.backdrop { display: none; }
+  .media.hug img { object-fit: cover; }
   .media img { position: relative; width: 100%; height: 100%; object-fit: contain; display: block; }
   .media img.backdrop { position: absolute; inset: -60px; width: calc(100% + 120px); height: calc(100% + 120px); object-fit: cover; filter: blur(40px) brightness(1.02) saturate(1.1); opacity: .55; }
+  .media video.play { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: transparent; opacity: 0; transition: opacity .5s ease; }
+  .media video.play.on { opacity: 1; }
+  .media .tag[hidden] { display: none; }
   .media .tag { position: absolute; top: 18px; left: 18px; background: rgba(21,23,28,.82); color: #fff; font-size: 22px; font-weight: 500; padding: 6px 16px; border-radius: 20px; }
   .media .card { position: absolute; left: 0; right: 0; bottom: 0; padding: 60px 26px 22px; color: #fff; background: linear-gradient(transparent, rgba(21,23,28,.9)); }
   .media .card b { display: block; font-size: 30px; line-height: 1.25; font-weight: 500; }
@@ -134,6 +143,7 @@
 </div>
 
 <script src="qrcode.js"></script>
+<script src="hls.light.min.js"></script>
 <script>
 'use strict';
 
@@ -153,7 +163,7 @@ const DEFAULTS = {
   display: { title: 'Press Wall', subtitle: 'Journalists and media covering the UN', show_logo: false },
   accounts: [],
   filter: { enabled: false, hashtags: [], keywords: [] },
-  feed: { refresh_minutes: 5, rotate_seconds: 15, max_age_hours: 48, include_reposts: false, show_images: true },
+  feed: { refresh_minutes: 5, rotate_seconds: 15, max_age_hours: 48, include_reposts: false, show_images: true, play_videos: false, video_max_seconds: 60 },
   x: { enabled: false, translate: true, accounts: [] },
   ai: { headlines: false }
 };
@@ -278,7 +288,7 @@ function extractMedia(e) {
     const img = e.images && e.images[0];
     return img ? { src: img.fullsize || img.thumb, alt: img.alt || '', ratio: ratio(img.aspectRatio), more: e.images.length - 1 } : null;
   }
-  if (t.startsWith('app.bsky.embed.video')) return e.thumbnail ? { src: e.thumbnail, ratio: ratio(e.aspectRatio), video: true } : null;
+  if (t.startsWith('app.bsky.embed.video')) return (e.thumbnail || e.playlist) ? { src: e.thumbnail || '', ratio: ratio(e.aspectRatio), video: true, stream: e.playlist || '', hls: true } : null;
   if (t.startsWith('app.bsky.embed.external')) {
     const x = e.external;
     return x && x.thumb ? { src: x.thumb, ratio: 1.91, card: { title: x.title || '', domain: hostOf(x.uri) } } : null;
@@ -345,13 +355,27 @@ async function fetchWithTimeout(url) {
 }
 
 /* ---------- X via FxTwitter (optional, unofficial: any failure just leaves Bluesky on screen) ---------- */
+// Best MP4 for a 1080-wide screen: the highest H.264 bitrate up to about 3 Mbps
+function pickVideoUrl(v) {
+  const mp4 = (v.formats || []).filter(f => f && f.url && (f.container === 'mp4' || /\.mp4(\?|$)/.test(f.url)) && (!f.codec || f.codec === 'h264'))
+    .sort((a, b) => (a.bitrate || 0) - (b.bitrate || 0));
+  if (mp4.length) {
+    const fit = mp4.filter(f => !f.bitrate || f.bitrate <= 3000000);
+    return (fit.length ? fit[fit.length - 1] : mp4[0]).url;
+  }
+  return v.url || '';
+}
+
 function extractXMedia(s) {
   const m = s.media || {};
   const r = (w, h) => (w && h ? w / h : null);
   const photo = (m.photos || [])[0];
   if (photo && photo.url) return { src: photo.url, ratio: r(photo.width, photo.height), more: m.photos.length - 1 };
   const video = (m.videos || [])[0];
-  if (video && video.thumbnail_url) return { src: video.thumbnail_url, ratio: r(video.width, video.height), video: true };
+  if (video && (video.thumbnail_url || video.url)) {
+    const stream = pickVideoUrl(video);
+    return { src: video.thumbnail_url || '', ratio: r(video.width, video.height), video: true, stream, hls: /\.m3u8(\?|$)/.test(stream), gif: video.type === 'gif' };
+  }
   if (m.external && m.external.thumbnail_url) return { src: m.external.thumbnail_url, ratio: r(m.external.width, m.external.height), video: true };
   const c = s.card;
   if (c && c.image && c.image.url) return { src: c.image.url, ratio: r(c.image.width, c.image.height) || 1.91, card: { title: c.title || '', domain: c.domain || hostOf(c.url || '') } };
@@ -512,9 +536,12 @@ function currentPost() { return posts.length ? posts[current % rotationLength()]
 
 let currentBox = null;
 function renderPost(emptyMessage, box = currentBox || (currentBox = $('post'))) {
+  stopVideos(box);
   box.replaceChildren();
   const p = currentPost();
+  delete box.dataset.id;
   if (!p) { box.append(el('p', 'empty', emptyMessage || '')); return; }
+  box.dataset.id = p.id;
 
   if (p.repostedBy) box.append(el('p', 'repost', `Reposted by ${p.repostedBy}`));
 
@@ -537,7 +564,8 @@ function renderPost(emptyMessage, box = currentBox || (currentBox = $('post'))) 
   box.append(author);
 
   let media = null;
-  if (p.media && p.media.src) {
+  const playable = !!(p.media && p.media.stream && videosOn());
+  if (p.media && (p.media.src || playable)) {
     media = el('div', 'media');
     media.style.height = `${mediaHeight(p.media.ratio)}px`;
     // Blurred copy fills the frame so the real picture is never cropped
@@ -547,16 +575,43 @@ function renderPost(emptyMessage, box = currentBox || (currentBox = $('post'))) 
     const img = el('img');
     img.alt = p.media.alt || '';
     img.src = p.media.src;
-    img.onerror = () => { media.remove(); fitPost(box, false); };
+    img.onerror = () => { if (playable) { img.remove(); backdrop.remove(); } else { media.remove(); fitPost(box, false); } };
     img.onload = () => {
       // Older posts may not declare their proportions: use the real ones
       if (!p.media.ratio && img.naturalWidth && img.naturalHeight) {
         p.media.ratio = img.naturalWidth / img.naturalHeight;
+        if (media.classList.contains('hug')) media.style.aspectRatio = String(p.media.ratio);
         media.style.height = `${mediaHeight(p.media.ratio)}px`;
         fitPost(box, true);
       }
     };
-    media.append(backdrop, img);
+    if (p.media.src) media.append(backdrop, img);
+    // The video sits on top of the thumbnail and only shows once it actually plays
+    if (playable) {
+      const v = el('video', 'play');
+      v.muted = true;
+      v.defaultMuted = true;
+      v.playsInline = true;
+      v.preload = 'auto';
+      v.loop = !!p.media.gif;
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
+      if (p.media.src) v.poster = p.media.src;
+      v._media = p.media;
+      media.append(v);
+      media.classList.add('hug');
+      media.style.aspectRatio = String(p.media.ratio || 16 / 9);
+      // Some posts don't say how the video is shaped: read it from the video itself
+      v.addEventListener('loadedmetadata', () => {
+        if (!v.videoWidth || !v.videoHeight) return;
+        const r = v.videoWidth / v.videoHeight;
+        if (p.media.ratio && Math.abs(r - p.media.ratio) / p.media.ratio < 0.04) return;
+        p.media.ratio = r;
+        media.style.aspectRatio = String(r);
+        media.style.height = `${mediaHeight(r)}px`;
+        fitPost(box, true);
+      });
+    }
     if (p.media.video) media.append(el('span', 'tag', 'Video'));
     else if (p.media.more > 0) media.append(el('span', 'tag', `+${p.media.more} photo${p.media.more > 1 ? 's' : ''}`));
     if (p.media.card) {
@@ -639,19 +694,104 @@ function renderQueue() {
 
 function renderAll(emptyMessage) {
   renderStatus(!!lastSuccess && Date.now() - lastSuccess < 3 * 60000 + (cfg.feed.refresh_minutes || 5) * 60000);
-  renderPost(emptyMessage);
+  const box = currentBox || $('post');
+  const p = currentPost();
+  const same = !!(p && box.dataset.id === p.id);
+  // Leave a playing video alone; otherwise redraw (fresh "5 min ago", new headline…)
+  if (!(same && box.querySelector('video.play'))) {
+    renderPost(emptyMessage);
+    if (!same && rotateTimer !== null) scheduleFor(currentBox);
+  }
   renderQueue();
 }
 
 /* ---------- Rotation ---------- */
-function startRotation() {
-  clearInterval(rotateTimer);
-  const every = Math.max(6, cfg.feed.rotate_seconds || 15) * 1000;
+// Each post gets its own slot: the normal duration, or the length of its video
+let slotMs = 15000;
+const rotateMs = () => Math.max(6, cfg.feed.rotate_seconds || 15) * 1000;
+const videosOn = () => cfg.feed.play_videos === true && cfg.feed.show_images !== false;
+
+function scheduleNext(ms) {
+  clearTimeout(rotateTimer);
+  slotMs = ms;
   rotateStartedAt = Date.now();
-  rotateTimer = setInterval(() => {
-    if (rotationLength() < 2) { rotateStartedAt = Date.now(); return; }
-    slideToNext();
-  }, every);
+  rotateTimer = setTimeout(advance, ms);
+}
+
+function advance() {
+  if (rotationLength() < 2) { scheduleFor(currentBox || $('post')); return; }
+  slideToNext();
+}
+
+function startRotation() { scheduleFor(currentBox || $('post')); }
+
+function scheduleFor(box) {
+  scheduleNext(rotateMs());
+  if (box) playVideo(box);
+}
+
+/* ---------- Videos ---------- */
+// Muted autoplay. The normal slot runs while the video loads; once it plays, the slot becomes
+// the video's length (capped in the editor). Any problem: the thumbnail stays and the wall moves on.
+function playVideo(box) {
+  const v = box.querySelector('video.play');
+  if (!v || v._started) return;
+  v._started = true;
+  const media = v._media || {};
+  const maxMs = Math.max(10, cfg.feed.video_max_seconds || 60) * 1000;
+  const mine = () => currentBox === box;
+  const giveUp = () => {
+    if (v._hls) { v._hls.destroy(); v._hls = null; }
+    v.remove();
+    const frame = box.querySelector('.media');
+    if (frame && !frame.querySelector('img')) { frame.remove(); fitPost(box, false); }
+    if (mine() && v._extended) scheduleNext(Math.min(rotateMs(), 5000));
+  };
+
+  // Start (or restart) playback once there is something to play
+  const kick = () => {
+    if (!v.paused || !v.isConnected) return;
+    const go = v.play();
+    if (go && go.catch) go.catch(err => { if (err && err.name !== 'AbortError') giveUp(); });
+  };
+  // Bluesky streams: hls.js first. Chrome now answers "maybe" for native HLS but then refuses these streams.
+  if (media.hls && window.Hls && Hls.isSupported()) {
+    const h = new Hls({ capLevelToPlayerSize: true, maxBufferLength: 20, startLevel: -1 });
+    h.on(Hls.Events.ERROR, (_, data) => { if (data && data.fatal) giveUp(); });
+    h.on(Hls.Events.MANIFEST_PARSED, kick);
+    h.loadSource(media.stream);
+    h.attachMedia(v);
+    v._hls = h;
+  } else if (media.hls && !v.canPlayType('application/vnd.apple.mpegurl')) {
+    giveUp(); return;
+  } else {
+    v.src = media.stream;
+  }
+  v.addEventListener('canplay', kick, { once: true });
+
+  v.addEventListener('error', giveUp, { once: true });
+  v.addEventListener('playing', () => {
+    v.classList.add('on');
+    const tag = box.querySelector('.media .tag');
+    if (tag) tag.hidden = true;
+    if (!mine() || v._extended || media.gif) return;
+    v._extended = true;
+    const length = Number.isFinite(v.duration) && v.duration > 0 ? v.duration * 1000 : maxMs;
+    const left = Math.min(length, maxMs) - v.currentTime * 1000;
+    scheduleNext(Math.max(3000, left + 300));
+  });
+  v.addEventListener('ended', () => { if (mine() && !media.gif) advance(); });
+  kick();
+}
+
+function stopVideos(box) {
+  if (!box) return;
+  box.querySelectorAll('video').forEach(v => {
+    try { v.pause(); } catch (_) {}
+    if (v._hls) { v._hls.destroy(); v._hls = null; }
+    v.removeAttribute('src');
+    try { v.load(); } catch (_) {}
+  });
 }
 
 // The next post comes up from below while the current one leaves through the top
@@ -664,7 +804,8 @@ function slideToNext() {
   renderPost('', newBox);
   currentBox = newBox;
   renderQueue();
-  rotateStartedAt = Date.now();
+  stopVideos(oldBox);
+  scheduleFor(newBox);
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { oldBox.remove(); return; }
   const distance = viewport.clientWidth + 72;
   newBox.style.transform = `translateX(${distance}px)`;
@@ -678,8 +819,7 @@ function slideToNext() {
 }
 
 function tickProgress() {
-  const every = Math.max(6, cfg.feed.rotate_seconds || 15) * 1000;
-  const p = Math.min(1, (Date.now() - rotateStartedAt) / every);
+  const p = Math.min(1, (Date.now() - rotateStartedAt) / slotMs);
   $('progress').style.width = rotationLength() > 1 ? `${p * 100}%` : '0';
   requestAnimationFrame(tickProgress);
 }
@@ -695,9 +835,7 @@ async function start() {
   const schedule = () => {
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(async () => {
-      const before = cfg.feed.rotate_seconds;
       await refresh();
-      if (cfg.feed.rotate_seconds !== before) startRotation();
       schedule();
     }, Math.max(2, cfg.feed.refresh_minutes || 5) * 60000);
   };

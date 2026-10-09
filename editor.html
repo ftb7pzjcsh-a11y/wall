@@ -99,7 +99,8 @@
   .chips input:focus { outline: none; }
   .toggle { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; color: var(--paper); font-size: 15px; }
   .toggle input { width: auto; }
-  .filter-body.off, .x-body.off { opacity: .45; }
+  .filter-body.off, .x-body.off, .video-max.off { opacity: .45; }
+  .video-max { max-width: 360px; margin: 4px 0 14px 30px; }
   .beta { font-size: 12px; font-weight: 500; color: var(--navy-deep); background: var(--gold); border-radius: 10px; padding: 2px 9px; vertical-align: 3px; margin-left: 8px; }
   .xtest { font-size: 14px; margin: 14px 0 0; }
   .xtest.ok { color: var(--green); }
@@ -242,6 +243,17 @@
       </div>
     </div>
     <label class="toggle"><input type="checkbox" id="images"> Afficher les images et vignettes vidéo</label>
+    <label class="toggle"><input type="checkbox" id="videos"> Lire les vidéos (sans le son) et attendre la fin avant de passer au post suivant</label>
+    <div class="field video-max" id="video-max">
+      <label for="videomax">Durée maximale d'une vidéo (au-delà, le mur passe au post suivant)</label>
+      <select id="videomax">
+        <option value="30">30 secondes</option>
+        <option value="45">45 secondes</option>
+        <option value="60">1 minute</option>
+        <option value="90">1 min 30</option>
+        <option value="120">2 minutes</option>
+      </select>
+    </div>
     <label class="toggle"><input type="checkbox" id="reposts"> Inclure les reposts (posts d'autres comptes partagés par les comptes listés)</label>
   </section>
 
@@ -277,7 +289,7 @@ const DEFAULTS = {
   display: { title: 'Press Wall', subtitle: 'Journalists and media covering the UN', show_logo: false },
   accounts: [],
   filter: { enabled: false, hashtags: [], keywords: [] },
-  feed: { refresh_minutes: 5, rotate_seconds: 15, max_age_hours: 48, include_reposts: false, show_images: true },
+  feed: { refresh_minutes: 5, rotate_seconds: 15, max_age_hours: 48, include_reposts: false, show_images: true, play_videos: false, video_max_seconds: 60 },
   x: { enabled: false, translate: true, accounts: [] },
   ai: { headlines: false }
 };
@@ -760,9 +772,12 @@ function bindFields() {
   bindSelect('refresh', 'refresh_minutes');
   bindSelect('rotate', 'rotate_seconds');
   bindSelect('maxage', 'max_age_hours');
+  bindSelect('videomax', 'video_max_seconds');
   const bindCheck = (id, obj, key, after) => { $(id).checked = !!obj[key]; $(id).onchange = () => { obj[key] = $(id).checked; markDirty(); after && after(); }; };
   bindCheck('images', config.feed, 'show_images');
   bindCheck('reposts', config.feed, 'include_reposts');
+  bindCheck('videos', config.feed, 'play_videos', renderVideoState);
+  renderVideoState();
   bindCheck('filter-on', config.filter, 'enabled', renderFilterState);
   bindCheck('x-on', config.x, 'enabled', () => { renderXState(); if (config.x.enabled) config.x.accounts.forEach(a => lookupX(a.handle)); });
   bindCheck('x-translate', config.x, 'translate');
@@ -778,6 +793,7 @@ function renderPreview() {
   $('pv-title').textContent = config.display.title || ' ';
   $('pv-sub').textContent = config.display.subtitle || '';
 }
+function renderVideoState() { $('video-max').classList.toggle('off', !config.feed.play_videos); }
 function renderFilterState() { $('filter-body').classList.toggle('off', !config.filter.enabled); }
 
 function renderAll() {
